@@ -133,6 +133,7 @@ export default function App() {
           post_date: form.post_date || null,
           post_time: form.post_time || null,
           pic: form.pic,
+          pj: form.pj,
           caption: form.caption,
           source_link: form.source_link,
         })
@@ -240,6 +241,7 @@ export default function App() {
       "Tgl Posting": p.post_date || "-",
       "Jam Posting": p.post_time || "-",
       PIC: p.pic || "-",
+      "PJ Pengerjaan": p.pj || "-",
       Caption: p.caption || "-",
       "Link Sumber": p.source_link || "-",
       "Alasan Ditolak": p.rejection_note || "-",
@@ -247,7 +249,7 @@ export default function App() {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 },
-      { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 40 }, { wch: 30 }, { wch: 20 },
+      { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 40 }, { wch: 30 }, { wch: 20 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Medflow");

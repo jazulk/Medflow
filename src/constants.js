@@ -75,6 +75,7 @@ export const HISTORY_FIELD_LABELS = {
   post_date: "Tanggal Posting",
   post_time: "Jam Posting",
   pic: "PIC",
+  pj: "PJ Pengerjaan",
   caption: "Catatan",
   source_link: "Link Sumber",
   rejection_note: "Alasan Ditolak",

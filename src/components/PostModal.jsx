@@ -9,6 +9,7 @@ const emptyForm = {
   post_date: "",
   post_time: "",
   pic: "",
+  pj: "",
   caption: "",
   source_link: "",
   rejection_note: "",
@@ -37,6 +38,7 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
         post_date: editingPost.post_date || "",
         post_time: editingPost.post_time || "",
         pic: editingPost.pic || "",
+        pj: editingPost.pj || "",
         caption: editingPost.caption || "",
         source_link: editingPost.source_link || "",
         rejection_note: editingPost.rejection_note || "",
@@ -174,9 +176,21 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
               <input type="time" value={form.post_time} onChange={(e) => set("post_time", e.target.value)} disabled={readOnly} />
             </div>
           </div>
-          <div className="field">
-            <label>PIC (Penanggung Jawab)</label>
-            <input type="text" value={form.pic} onChange={(e) => set("pic", e.target.value)} placeholder="misal: Jazuli" disabled={readOnly} />
+          <div className="row2">
+            <div className="field">
+              <label>PIC (Penanggung Jawab)</label>
+              <input type="text" value={form.pic} onChange={(e) => set("pic", e.target.value)} placeholder="misal: Jazuli" disabled={readOnly} />
+            </div>
+            <div className="field">
+              <label>PJ Pengerjaan (diisi admin)</label>
+              <input
+                type="text"
+                value={form.pj}
+                onChange={(e) => set("pj", e.target.value)}
+                placeholder="misal: Nadia (Pubinfo)"
+                disabled={!isAdmin}
+              />
+            </div>
           </div>
           <div className="field">
             <label>Catatan</label>

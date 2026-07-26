@@ -35,6 +35,7 @@ create table if not exists posts (
   post_date date,
   post_time time check (post_time is null or (post_time >= '08:00' and post_time <= '21:00')),
   pic text,
+  pj text,
   caption text,
   source_link text,
   rejection_note text,
@@ -220,7 +221,7 @@ as $$
 declare
   v_changes jsonb := '[]'::jsonb;
   v_actor_name text;
-  v_fields text[] := array['title','platform','status','post_date','post_time','pic','caption','source_link','rejection_note','archived_at'];
+  v_fields text[] := array['title','platform','status','post_date','post_time','pic','pj','caption','source_link','rejection_note','archived_at'];
   f text;
   old_val text;
   new_val text;

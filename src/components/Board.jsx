@@ -134,6 +134,7 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                         <span className="pic-badge" title={p.pic || ""}>
                           {initials}
                         </span>
+                        {p.pj && <span className="pj-tag">PJ: {p.pj}</span>}
                       </div>
                     </div>
                   );
