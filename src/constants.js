@@ -68,6 +68,23 @@ export function sortByPostDate(posts) {
 }
 
 // ---------- History ----------
+export const PJ_OPTIONS = [
+  "Ariel (Multimedia)",
+  "Syifa (Multimedia)",
+  "Junitha (Multimedia)",
+  "Dino (Multimedia)",
+  "Diva (Multimedia)",
+  "Eva (Multimedia)",
+  "Farhan (Multimedia)",
+  "Rahmat (Multimedia)",
+  "Jazuli (Pubinfo)",
+  "Thalita (Pubinfo)",
+  "Calista (Pubinfo)",
+  "Chelsea (Pubinfo)",
+  "Regina (Pubinfo)",
+  "Fadil (Pubinfo)",
+];
+
 export const HISTORY_FIELD_LABELS = {
   title: "Judul",
   platform: "Platform",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
-import { STATUSES, formatDateTime, formatHistoryChange, ownerCanEdit } from "../constants";
+import { STATUSES, PJ_OPTIONS, formatDateTime, formatHistoryChange, ownerCanEdit } from "../constants";
 
 const emptyForm = {
   title: "",
@@ -183,13 +183,15 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
             </div>
             <div className="field">
               <label>PJ Pengerjaan (diisi admin)</label>
-              <input
-                type="text"
-                value={form.pj}
-                onChange={(e) => set("pj", e.target.value)}
-                placeholder="misal: Nadia (Pubinfo)"
-                disabled={!isAdmin}
-              />
+              <select value={form.pj} onChange={(e) => set("pj", e.target.value)} disabled={!isAdmin}>
+                <option value="">Belum ditentuin</option>
+                {form.pj && !PJ_OPTIONS.includes(form.pj) && <option value={form.pj}>{form.pj}</option>}
+                {PJ_OPTIONS.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="field">
