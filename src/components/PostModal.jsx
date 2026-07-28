@@ -6,6 +6,8 @@ const emptyForm = {
   topic: "",
   platform: "Instagram",
   status: "Request",
+  bidang_pengaju: "",
+  content_ready: false,
   post_date: "",
   post_time: "",
   pic: "",
@@ -15,7 +17,7 @@ const emptyForm = {
   rejection_note: "",
 };
 
-export default function PostModal({ profile, editingPost, onClose, onSave }) {
+export default function PostModal({ profile, editingPost, bidangList, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   const isExemptFromH5 = profile.username === "advo"; // sering ada info mendadak, dikecualikan dari H-5
@@ -34,6 +36,8 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
         topic,
         platform: editingPost.platform || "Instagram",
         status: editingPost.status || "Request",
+        bidang_pengaju: editingPost.requested_by_name || "",
+        content_ready: !!editingPost.content_ready,
         post_date: editingPost.post_date || "",
         post_time: editingPost.post_time || "",
         pic: editingPost.pic || "",
@@ -78,12 +82,17 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
         return;
       }
       if (!isExemptFromH5) {
+        const minDays = form.content_ready ? 1 : 5;
         const minDate = new Date();
         minDate.setHours(0, 0, 0, 0);
-        minDate.setDate(minDate.getDate() + 5);
+        minDate.setDate(minDate.getDate() + minDays);
         const chosenDate = new Date(form.post_date + "T00:00:00");
         if (chosenDate < minDate) {
-          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting.");
+          setFormError(
+            form.content_ready
+              ? "Request konten yang udah jadi minimal diajukan H-1 dari tanggal posting."
+              : "Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau kontennya udah jadi (tinggal upload/repost), centang opsi di bawah biar cukup H-1."
+          );
           return;
         }
       }
@@ -93,6 +102,7 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
       title: joinPrefixAndTopic(form.prefix, form.topic),
       platform: form.platform,
       status: form.status,
+      content_ready: form.content_ready,
       post_date: form.post_date,
       post_time: form.post_time,
       pic: form.pic,
@@ -101,6 +111,11 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
       source_link: form.source_link,
       rejection_note: form.rejection_note,
     };
+    // Cuma admin yang boleh nitip/ubah atas nama bidang mana request ini --
+    // trigger DB juga cuma nerapin ini kalau role-nya admin, bidang tetap kekunci ke akun sendiri.
+    if (isAdmin && form.bidang_pengaju.trim()) {
+      payload.requested_by_name = form.bidang_pengaju.trim();
+    }
 
     setSaving(true);
     const ok = await onSave(payload);
@@ -167,6 +182,43 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
               />
             </div>
           </div>
+
+          {isAdmin && (
+            <div className="field">
+              <label>Bidang Pengaju (buat bantuin request urgent / atas nama bidang)</label>
+              <input
+                type="text"
+                list="bidang-pengaju-list"
+                value={form.bidang_pengaju}
+                onChange={(e) => set("bidang_pengaju", e.target.value)}
+                placeholder="kosongin = atas nama Medfo (default)"
+              />
+              <datalist id="bidang-pengaju-list">
+                {(bidangList || []).map((b) => (
+                  <option key={b} value={b} />
+                ))}
+              </datalist>
+            </div>
+          )}
+
+          {!isAdmin && !editingPost && (
+            <div className="field">
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={form.content_ready}
+                  onChange={(e) => set("content_ready", e.target.checked)}
+                />
+                Konten udah jadi dari bidang (misal: repost story dari akun sendiri, atau video udah direkam) — tinggal upload/repost aja
+              </label>
+              {form.content_ready && !isExemptFromH5 && (
+                <p style={{ fontSize: 11.5, color: "var(--mint)", margin: "6px 0 0", fontWeight: 600 }}>
+                  Karena kontennya udah jadi, cukup diajukan minimal H-1.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="row2">
             <div className="field">

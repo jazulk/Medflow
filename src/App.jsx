@@ -140,12 +140,14 @@ export default function App() {
           title: form.title,
           platform: form.platform,
           status: form.status,
+          content_ready: form.content_ready,
           post_date: form.post_date || null,
           post_time: form.post_time || null,
           pic: form.pic,
           pj: form.pj,
           caption: form.caption,
           source_link: form.source_link,
+          ...(form.requested_by_name ? { requested_by_name: form.requested_by_name } : {}),
         })
         .select();
 
@@ -409,6 +411,7 @@ export default function App() {
         <PostModal
           profile={profile}
           editingPost={editingPost}
+          bidangList={bidangList}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
         />

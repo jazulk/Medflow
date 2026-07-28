@@ -94,6 +94,9 @@ export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDel
           <div className="detail-section">
             <h3>Original Request</h3>
             <div className="detail-row"><span>Platform</span><b style={{ color: pc.c }}>{post.platform}</b></div>
+            {post.content_ready && (
+              <div className="detail-row"><span>Jenis</span><b style={{ color: "var(--mint)" }}>⚡ Konten sudah jadi (tinggal upload/repost)</b></div>
+            )}
             <div className="detail-row"><span>Diajukan Oleh</span><b>{post.requested_by_name || "-"}</b></div>
             <div className="detail-row"><span>Tanggal Diajukan</span><b>{formatDateFull(post.submit_date)}</b></div>
             <div className="detail-row">

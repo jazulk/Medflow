@@ -93,6 +93,9 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                         {p.requested_by_name && (
                           <span className="requester-badge" style={{ background: getDepartmentColor(p.requested_by_name).s, color: getDepartmentColor(p.requested_by_name).c }}>dari {p.requested_by_name}</span>
                         )}
+                        {p.content_ready && (
+                          <span className="requester-badge" style={{ background: "var(--mint-soft)", color: "var(--mint)" }}>⚡ Siap Upload</span>
+                        )}
                       </div>
                       <div className="date-row">
                         <div>
