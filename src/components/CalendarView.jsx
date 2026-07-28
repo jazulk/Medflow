@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PLATFORM_COLORS, STATUSES } from "../constants";
+import { PLATFORM_COLORS, STATUSES, getDepartmentColor } from "../constants";
 
 const MONTH_NAMES = [
   "Januari","Februari","Maret","April","Mei","Juni",
@@ -70,11 +70,14 @@ export default function CalendarView({ posts, profile, onCardClick }) {
               onClick={() => dateStr && list.length > 0 && setDayDetail(dateStr)}
             >
               <div className="cal-daynum">{c.num}</div>
-              {list.slice(0, 2).map((p) => (
-                <div className="cal-post-line" key={p.id}>
-                  {p.post_time ? `${p.post_time.slice(0, 5)} · ` : ""}{p.title}
-                </div>
-              ))}
+              {list.slice(0, 2).map((p) => {
+                const pc = PLATFORM_COLORS[p.platform] || { c: "#6B7280" };
+                return (
+                  <div className="cal-post-line" style={{ background: pc.c }} key={p.id}>
+                    {p.post_time ? `${p.post_time.slice(0, 5)} · ` : ""}{p.title}
+                  </div>
+                );
+              })}
               {list.length > 2 && <div className="cal-more">+{list.length - 2} lagi</div>}
             </div>
           );
@@ -124,7 +127,7 @@ export default function CalendarView({ posts, profile, onCardClick }) {
                           <span className="platform-badge" style={{ background: pc.s, color: pc.c }}>{p.platform}</span>
                           <span className="platform-badge" style={{ background: st.color + "22", color: st.color, marginLeft: 6 }}>{p.status}</span>
                           {p.requested_by_name && (
-                            <span className="requester-badge" style={{ marginLeft: 6 }}>dari {p.requested_by_name}</span>
+                            <span className="requester-badge" style={{ marginLeft: 6, background: getDepartmentColor(p.requested_by_name).s, color: getDepartmentColor(p.requested_by_name).c }}>dari {p.requested_by_name}</span>
                           )}
                         </div>
                       );

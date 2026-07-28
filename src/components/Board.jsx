@@ -1,4 +1,4 @@
-import { STATUSES, PLATFORM_COLORS, formatDateShort, isOverdue, sortByPostDate, isArchived, ownerCanDelete } from "../constants";
+import { STATUSES, PLATFORM_COLORS, formatDateShort, isOverdue, sortByPostDate, isArchived, ownerCanDelete, getDepartmentColor } from "../constants";
 
 export default function Board({ posts, profile, onCardClick, onDelete, onDropStatus, onArchive }) {
   const isAdmin = profile.role === "admin";
@@ -22,8 +22,8 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
             <div className="col-head">
               <span className="col-title" style={{ background: st.color }}>
                 {st.key}
+                <span className="col-count">{items.length}</span>
               </span>
-              <span className="col-count">{items.length}</span>
             </div>
             <div
               className="col-body"
@@ -91,7 +91,7 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                           {p.platform}
                         </span>
                         {p.requested_by_name && (
-                          <span className="requester-badge">dari {p.requested_by_name}</span>
+                          <span className="requester-badge" style={{ background: getDepartmentColor(p.requested_by_name).s, color: getDepartmentColor(p.requested_by_name).c }}>dari {p.requested_by_name}</span>
                         )}
                       </div>
                       <div className="date-row">

@@ -6,6 +6,7 @@ import Board from "./components/Board";
 import CalendarView from "./components/CalendarView";
 import ArchiveView from "./components/ArchiveView";
 import PostModal from "./components/PostModal";
+import PostDetailDrawer from "./components/PostDetailDrawer";
 import Toast from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 import { useDebounce } from "./hooks/useDebounce";
@@ -27,6 +28,15 @@ export default function App() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
+  const [selectedPostForDrawer, setSelectedPostForDrawer] = useState(null);
+
+  // Jaga drawer tetap sinkron kalau postingannya keupdate (realtime dari orang lain,
+  // atau optimistic update sendiri) -- dan otomatis nutup drawer kalau postingannya kehapus.
+  useEffect(() => {
+    if (!selectedPostForDrawer) return;
+    const updated = posts.find((p) => p.id === selectedPostForDrawer.id);
+    if (updated !== selectedPostForDrawer) setSelectedPostForDrawer(updated || null);
+  }, [posts, selectedPostForDrawer]);
 
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
@@ -362,7 +372,7 @@ export default function App() {
           <Board
             posts={filteredPosts}
             profile={profile}
-            onCardClick={(p) => { setEditingPost(p); setModalOpen(true); }}
+            onCardClick={(p) => setSelectedPostForDrawer(p)}
             onDelete={requestDelete}
             onDropStatus={handleDropStatus}
             onArchive={handleToggleArchive}
@@ -371,18 +381,29 @@ export default function App() {
           <CalendarView
             posts={filteredPosts}
             profile={profile}
-            onCardClick={(p) => { setEditingPost(p); setModalOpen(true); }}
+            onCardClick={(p) => setSelectedPostForDrawer(p)}
           />
         ) : (
           <ArchiveView
             posts={archivedPosts}
             profile={profile}
-            onCardClick={(p) => { setEditingPost(p); setModalOpen(true); }}
+            onCardClick={(p) => setSelectedPostForDrawer(p)}
             onDelete={requestDelete}
             onArchive={handleToggleArchive}
           />
         )}
       </div>
+
+      {selectedPostForDrawer && (
+        <PostDetailDrawer
+          post={selectedPostForDrawer}
+          profile={profile}
+          onClose={() => setSelectedPostForDrawer(null)}
+          onEdit={(p) => { setSelectedPostForDrawer(null); setEditingPost(p); setModalOpen(true); }}
+          onDelete={requestDelete}
+          onStatusChange={handleDropStatus}
+        />
+      )}
 
       {modalOpen && (
         <PostModal

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
-import { STATUSES, PJ_OPTIONS, formatDateTime, formatHistoryChange, ownerCanEdit } from "../constants";
+import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit } from "../constants";
 
 const emptyForm = {
-  title: "",
+  prefix: "[FEEDS]",
+  topic: "",
   platform: "Instagram",
   status: "Request",
   post_date: "",
@@ -19,20 +19,19 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   const isExemptFromH5 = profile.username === "advo"; // sering ada info mendadak, dikecualikan dari H-5
-  // Bidang bisa buka postingan sendiri buat DILIAT walau statusnya udah lewat jendela edit
-  // (Siap Posting/Sudah Diposting) -- tapi form-nya jadi read-only kalau kejadian itu.
-  const readOnly = isViewer || (editingPost ? !ownerCanEdit(editingPost, profile) : false);
+  // Modal ini sekarang cuma kebuka lewat tombol "+ Tambah" atau tombol "Edit" di drawer,
+  // yang keduanya udah ngecek izin duluan -- tapi tetep dijaga di sini biar aman kalau ada jalur lain.
+  const canEditThis = isAdmin || (editingPost ? ownerCanEdit(editingPost, profile) : !isViewer);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (editingPost) {
+      const { prefix, topic } = splitPrefixFromTitle(editingPost.title);
       setForm({
-        title: editingPost.title || "",
+        prefix,
+        topic,
         platform: editingPost.platform || "Instagram",
         status: editingPost.status || "Request",
         post_date: editingPost.post_date || "",
@@ -46,28 +45,8 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
     } else {
       setForm(emptyForm);
     }
-    setHistory([]);
-    setHistoryOpen(false);
     setFormError(null);
   }, [editingPost]);
-
-  async function loadHistory() {
-    if (!editingPost) return;
-    setLoadingHistory(true);
-    const { data, error } = await supabase
-      .from("post_history")
-      .select("*")
-      .eq("post_id", editingPost.id)
-      .order("changed_at", { ascending: false });
-    if (!error) setHistory(data || []);
-    setLoadingHistory(false);
-  }
-
-  function toggleHistory() {
-    const next = !historyOpen;
-    setHistoryOpen(next);
-    if (next && history.length === 0) loadHistory();
-  }
 
   function set(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
@@ -76,10 +55,10 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (readOnly) return; // read-only (viewer, atau postingan udah di luar jendela edit)
+    if (!canEditThis) return;
     setFormError(null);
 
-    if (!form.title.trim()) {
+    if (!form.topic.trim()) {
       setFormError("Judul postingan wajib diisi ya.");
       return;
     }
@@ -110,76 +89,100 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
       }
     }
 
+    const payload = {
+      title: joinPrefixAndTopic(form.prefix, form.topic),
+      platform: form.platform,
+      status: form.status,
+      post_date: form.post_date,
+      post_time: form.post_time,
+      pic: form.pic,
+      pj: form.pj,
+      caption: form.caption,
+      source_link: form.source_link,
+      rejection_note: form.rejection_note,
+    };
+
     setSaving(true);
-    const ok = await onSave(form);
+    const ok = await onSave(payload);
     setSaving(false);
-    // kalau gagal (misal konflik edit bareng), modal TETAP kebuka biar isian nggak ilang
-    if (!ok) return;
+    if (!ok) return; // gagal (misal konflik edit bareng) -- modal tetap kebuka, isian nggak ilang
+  }
+
+  if (!canEditThis) {
+    return (
+      <div className="overlay">
+        <div className="modal small">
+          <h2>Nggak bisa diedit</h2>
+          <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+            Kamu nggak punya izin buat ubah postingan ini.
+          </p>
+          <div className="modal-actions">
+            <button className="btn-primary wide" onClick={onClose}>Tutup</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="overlay">
       <div className="modal">
-        <h2>{readOnly ? "Detail Postingan" : editingPost ? "Edit Postingan" : isAdmin ? "Tambah Postingan" : "Request Postingan"}</h2>
+        <h2>{editingPost ? "Edit Postingan" : isAdmin ? "Tambah Postingan" : "Request Postingan"}</h2>
         {isExemptFromH5 && !isAdmin && !editingPost && (
           <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: "-8px 0 14px" }}>
             Bidang Advokasi dikecualikan dari aturan H-5 (buat info mendadak).
           </p>
         )}
-        {readOnly && !isViewer && (
-          <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: "-8px 0 14px" }}>
-            Postingan ini udah nggak bisa diedit/dihapus sendiri (status: {editingPost?.status}). Hubungi admin kalau perlu revisi.
-          </p>
-        )}
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label>Judul / Topik</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => set("title", e.target.value)}
-              placeholder="misal: Recap Sarasehan Prodi"
-              autoFocus
-              disabled={readOnly}
-            />
-          </div>
-          <div className="row2">
-            <div className="field">
-              <label>Platform</label>
-              <select value={form.platform} onChange={(e) => set("platform", e.target.value)} disabled={readOnly}>
-                <option value="Instagram">Instagram</option>
-                <option value="TikTok">TikTok</option>
-                <option value="YouTube">YouTube</option>
-                <option value="Website BEM">Website BEM</option>
-              </select>
+            <label>Platform</label>
+            <div className="pill-row">
+              {Object.keys(PLATFORM_COLORS).map((pl) => (
+                <button
+                  key={pl}
+                  type="button"
+                  className={`chip ${form.platform === pl ? "active" : ""}`}
+                  onClick={() => set("platform", pl)}
+                >
+                  {pl}
+                </button>
+              ))}
             </div>
-            {isAdmin && (
-              <div className="field">
-                <label>Status</label>
-                <select value={form.status} onChange={(e) => set("status", e.target.value)}>
-                  {STATUSES.map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {s.key}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
+
+          <div className="field">
+            <label>Judul / Topik</label>
+            <div className="prefix-row">
+              <select value={form.prefix} onChange={(e) => set("prefix", e.target.value)}>
+                {PREFIX_OPTIONS.map((px) => (
+                  <option key={px} value={px}>{px}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={form.topic}
+                onChange={(e) => set("topic", e.target.value)}
+                placeholder="misal: Recap Sarasehan Prodi"
+                autoFocus
+              />
+            </div>
+          </div>
+
           <div className="row2">
             <div className="field">
               <label>Tanggal Posting</label>
-              <input type="date" value={form.post_date} onChange={(e) => set("post_date", e.target.value)} disabled={readOnly} />
+              <input type="date" value={form.post_date} onChange={(e) => set("post_date", e.target.value)} />
             </div>
             <div className="field">
               <label>Jam Posting</label>
-              <input type="time" value={form.post_time} onChange={(e) => set("post_time", e.target.value)} disabled={readOnly} />
+              <input type="time" value={form.post_time} onChange={(e) => set("post_time", e.target.value)} />
             </div>
           </div>
+
           <div className="row2">
             <div className="field">
               <label>PIC (Penanggung Jawab)</label>
-              <input type="text" value={form.pic} onChange={(e) => set("pic", e.target.value)} placeholder="misal: Jazuli" disabled={readOnly} />
+              <input type="text" value={form.pic} onChange={(e) => set("pic", e.target.value)} placeholder="misal: Jazuli" />
             </div>
             <div className="field">
               <label>PJ Pengerjaan (diisi admin)</label>
@@ -187,22 +190,36 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
                 <option value="">Belum ditentuin</option>
                 {form.pj && !PJ_OPTIONS.includes(form.pj) && <option value={form.pj}>{form.pj}</option>}
                 {PJ_OPTIONS.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
+                  <option key={name} value={name}>{name}</option>
                 ))}
               </select>
             </div>
           </div>
+
+          {isAdmin && (
+            <div className="field">
+              <label>Status</label>
+              <select value={form.status} onChange={(e) => set("status", e.target.value)}>
+                {STATUSES.map((s) => (
+                  <option key={s.key} value={s.key}>{s.key}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="field">
-            <label>Catatan</label>
+            <div className="field-label-row">
+              <label>Catatan</label>
+              <span className="char-count">{form.caption.length}/250</span>
+            </div>
             <textarea
               value={form.caption}
               onChange={(e) => set("caption", e.target.value)}
+              maxLength={250}
               placeholder="catatan singkat aja (caption lengkap taruh di folder Drive, bagian Link Sumber)"
-              disabled={readOnly}
             />
           </div>
+
           <div className="field">
             <label>Link Sumber — Folder Gdrive (isi: poster/gambar + docx caption lengkap)</label>
             <textarea
@@ -210,9 +227,9 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
               onChange={(e) => set("source_link", e.target.value)}
               placeholder={"https://drive.google.com/drive/folders/..."}
               style={{ minHeight: 56 }}
-              disabled={readOnly}
             />
           </div>
+
           {isAdmin && form.status === "Ditolak" && (
             <div className="field">
               <label>Alasan Ditolak (kasih tau bidang secara manual ya)</label>
@@ -224,53 +241,15 @@ export default function PostModal({ profile, editingPost, onClose, onSave }) {
             </div>
           )}
 
-          {editingPost && (
-            <div className="history-section">
-              <button type="button" className="history-toggle" onClick={toggleHistory} aria-expanded={historyOpen}>
-                {historyOpen ? "▾" : "▸"} Riwayat Perubahan
-              </button>
-              {historyOpen && (
-                <div className="history-list">
-                  {loadingHistory ? (
-                    <div className="history-empty">Memuat riwayat...</div>
-                  ) : history.length === 0 ? (
-                    <div className="history-empty">Belum ada riwayat perubahan.</div>
-                  ) : (
-                    history.map((h) => (
-                      <div className="history-item" key={h.id}>
-                        <div className="history-meta">
-                          <b>{h.changed_by_name || "System"}</b> · {formatDateTime(h.changed_at)}
-                        </div>
-                        {(h.changes || []).map((c, i) => (
-                          <div className="history-change" key={i}>
-                            {formatHistoryChange(c)}
-                          </div>
-                        ))}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           {formError && <div className="form-error">{formError}</div>}
 
           <div className="modal-actions">
-            {readOnly ? (
-              <button type="button" className="btn-primary wide" onClick={onClose} aria-label="Tutup">
-                Tutup
-              </button>
-            ) : (
-              <>
-                <button type="button" className="btn-ghost" onClick={onClose} disabled={saving} aria-label="Batalkan dan tutup form">
-                  Batal
-                </button>
-                <button type="submit" className="btn-primary wide" disabled={saving}>
-                  {saving ? "Menyimpan..." : "Simpan"}
-                </button>
-              </>
-            )}
+            <button type="button" className="btn-ghost" onClick={onClose} disabled={saving} aria-label="Batalkan dan tutup form">
+              Batal
+            </button>
+            <button type="submit" className="btn-primary wide" disabled={saving}>
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
           </div>
         </form>
       </div>
