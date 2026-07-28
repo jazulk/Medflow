@@ -17,7 +17,7 @@ const emptyForm = {
   rejection_note: "",
 };
 
-export default function PostModal({ profile, editingPost, bidangList, onClose, onSave }) {
+export default function PostModal({ profile, editingPost, bidangAccounts, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   const isExemptFromH5 = profile.username === "advo"; // sering ada info mendadak, dikecualikan dari H-5
@@ -186,18 +186,12 @@ export default function PostModal({ profile, editingPost, bidangList, onClose, o
           {isAdmin && (
             <div className="field">
               <label>Bidang Pengaju (buat bantuin request urgent / atas nama bidang)</label>
-              <input
-                type="text"
-                list="bidang-pengaju-list"
-                value={form.bidang_pengaju}
-                onChange={(e) => set("bidang_pengaju", e.target.value)}
-                placeholder="kosongin = atas nama Medfo (default)"
-              />
-              <datalist id="bidang-pengaju-list">
-                {(bidangList || []).map((b) => (
-                  <option key={b} value={b} />
+              <select value={form.bidang_pengaju} onChange={(e) => set("bidang_pengaju", e.target.value)}>
+                <option value="">Medfo (default, atas nama sendiri)</option>
+                {(bidangAccounts || []).map((b) => (
+                  <option key={b} value={b}>{b}</option>
                 ))}
-              </datalist>
+              </select>
             </div>
           )}
 

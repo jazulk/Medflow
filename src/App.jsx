@@ -74,6 +74,20 @@ export default function App() {
       });
   }, [session]);
 
+  // ---------- Daftar bidang asli (buat dropdown "Bidang Pengaju" admin) ----------
+  const [bidangAccounts, setBidangAccounts] = useState([]);
+  useEffect(() => {
+    if (!profile || profile.role !== "admin") return;
+    supabase
+      .from("profiles")
+      .select("bidang_name")
+      .eq("role", "bidang")
+      .order("bidang_name")
+      .then(({ data, error }) => {
+        if (!error) setBidangAccounts(data.map((r) => r.bidang_name).filter(Boolean));
+      });
+  }, [profile]);
+
   // ---------- Posts: fetch awal + realtime patch (bukan refetch semua) ----------
   useEffect(() => {
     if (!profile) return;
@@ -411,7 +425,7 @@ export default function App() {
         <PostModal
           profile={profile}
           editingPost={editingPost}
-          bidangList={bidangList}
+          bidangAccounts={bidangAccounts}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
         />
