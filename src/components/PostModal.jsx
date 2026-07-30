@@ -204,7 +204,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
                   checked={form.content_ready}
                   onChange={(e) => set("content_ready", e.target.checked)}
                 />
-                Konten udah jadi dari bidang (misal: repost story dari akun sendiri, atau video udah direkam) — tinggal upload/repost aja
+                Konten udah jadi dari bidang (poster distory, repost story, konten tiktok) — tinggal upload/repost aja
               </label>
               {form.content_ready && !isExemptFromH5 && (
                 <p style={{ fontSize: 11.5, color: "var(--mint)", margin: "6px 0 0", fontWeight: 600 }}>
