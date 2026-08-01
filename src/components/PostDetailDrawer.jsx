@@ -114,6 +114,13 @@ export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDel
             </div>
           )}
 
+          {(post.status === "On Progress" || post.status === "Siap Posting") && post.revision_note && (
+            <div className="detail-section">
+              <h3>Alasan Dikembalikan</h3>
+              <div className="caption-box" style={{ color: "var(--amber)" }}>{post.revision_note}</div>
+            </div>
+          )}
+
           <div className="detail-section">
             <h3>Catatan</h3>
             <div className="caption-box">{post.caption || "Belum ada catatan."}</div>

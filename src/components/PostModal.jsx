@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit } from "../constants";
+import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit, isRevisionReturn } from "../constants";
 
 const emptyForm = {
   prefix: "[FEEDS]",
@@ -15,6 +15,7 @@ const emptyForm = {
   caption: "",
   source_link: "",
   rejection_note: "",
+  revision_note: "",
 };
 
 export default function PostModal({ profile, editingPost, bidangAccounts, onClose, onSave }) {
@@ -25,6 +26,8 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
   // yang keduanya udah ngecek izin duluan -- tapi tetep dijaga di sini biar aman kalau ada jalur lain.
   const canEditThis = isAdmin || (editingPost ? ownerCanEdit(editingPost, profile) : !isViewer);
   const [form, setForm] = useState(emptyForm);
+  // true kalau admin lagi balikin postingan ini dari Sudah Diposting -> On Progress/Siap Posting
+  const isReturning = isAdmin && editingPost ? isRevisionReturn(editingPost.status, form.status) : false;
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
@@ -45,6 +48,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
         caption: editingPost.caption || "",
         source_link: editingPost.source_link || "",
         rejection_note: editingPost.rejection_note || "",
+        revision_note: editingPost.revision_note || "",
       });
     } else {
       setForm(emptyForm);
@@ -64,6 +68,11 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
 
     if (!form.topic.trim()) {
       setFormError("Judul postingan wajib diisi ya.");
+      return;
+    }
+
+    if (isReturning && !form.revision_note.trim()) {
+      setFormError('Postingan ini "Sudah Diposting" -- kasih alasan dulu kenapa dibalikin ya (misal: salah tanggal upload, revisi desain dari Mulmed).');
       return;
     }
 
@@ -110,6 +119,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
       caption: form.caption,
       source_link: form.source_link,
       rejection_note: form.rejection_note,
+      revision_note: form.revision_note,
     };
     // Cuma admin yang boleh nitip/ubah atas nama bidang mana request ini --
     // trigger DB juga cuma nerapin ini kalau role-nya admin, bidang tetap kekunci ke akun sendiri.
@@ -283,6 +293,17 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
                 value={form.rejection_note}
                 onChange={(e) => set("rejection_note", e.target.value)}
                 placeholder="misal: sudah lewat momentum, atau duplikat sama konten lain"
+              />
+            </div>
+          )}
+
+          {isReturning && (
+            <div className="field">
+              <label>Alasan Dikembalikan (wajib diisi)</label>
+              <textarea
+                value={form.revision_note}
+                onChange={(e) => set("revision_note", e.target.value)}
+                placeholder="misal: salah tanggal upload, atau revisi desain dari Mulmed"
               />
             </div>
           )}

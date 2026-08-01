@@ -9,8 +9,9 @@ import PostModal from "./components/PostModal";
 import PostDetailDrawer from "./components/PostDetailDrawer";
 import Toast from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
+import RevisionNoteDialog from "./components/RevisionNoteDialog";
 import { useDebounce } from "./hooks/useDebounce";
-import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived } from "./constants";
+import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn } from "./constants";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -40,6 +41,7 @@ export default function App() {
 
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
+  const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -195,6 +197,13 @@ export default function App() {
   }
 
   async function handleDropStatus(id, status) {
+    const current = posts.find((p) => p.id === id);
+    // Kalau ini "balikin" dari Sudah Diposting ke On Progress/Siap Posting,
+    // jangan langsung update -- minta alasan dulu lewat dialog.
+    if (current && isRevisionReturn(current.status, status)) {
+      setRevisionPrompt({ id, toStatus: status });
+      return;
+    }
     const { data, error } = await supabase.from("posts").update({ status }).eq("id", id).select();
     if (error) {
       showToast("Gagal update status: " + error.message, "error");
@@ -202,6 +211,25 @@ export default function App() {
     }
     if (data && data[0]) {
       setPosts((prev) => prev.map((p) => (p.id === id ? data[0] : p)));
+    }
+  }
+
+  async function confirmRevision(note) {
+    if (!revisionPrompt) return;
+    const { id, toStatus } = revisionPrompt;
+    setRevisionPrompt(null);
+    const { data, error } = await supabase
+      .from("posts")
+      .update({ status: toStatus, revision_note: note })
+      .eq("id", id)
+      .select();
+    if (error) {
+      showToast("Gagal update status: " + error.message, "error");
+      return;
+    }
+    if (data && data[0]) {
+      setPosts((prev) => prev.map((p) => (p.id === id ? data[0] : p)));
+      showToast("Postingan dibalikin dengan alasan tersimpan");
     }
   }
 
@@ -271,11 +299,12 @@ export default function App() {
       Caption: p.caption || "-",
       "Link Sumber": p.source_link || "-",
       "Alasan Ditolak": p.rejection_note || "-",
+      "Alasan Dikembalikan": p.revision_note || "-",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 },
-      { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 40 }, { wch: 30 }, { wch: 20 },
+      { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 40 }, { wch: 30 }, { wch: 20 }, { wch: 30 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Medflow");
@@ -437,6 +466,13 @@ export default function App() {
         message="Postingan yang udah dihapus nggak bisa dikembalikan lagi."
         onConfirm={confirmDelete}
         onCancel={() => setConfirmState(null)}
+      />
+
+      <RevisionNoteDialog
+        open={Boolean(revisionPrompt)}
+        targetStatus={revisionPrompt?.toStatus || ""}
+        onConfirm={confirmRevision}
+        onCancel={() => setRevisionPrompt(null)}
       />
 
       <Toast toast={toast} />

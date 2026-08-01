@@ -113,6 +113,9 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                       {p.status === "Ditolak" && p.rejection_note && (
                         <div className="rejection-note">Alasan: {p.rejection_note}</div>
                       )}
+                      {(p.status === "On Progress" || p.status === "Siap Posting") && p.revision_note && (
+                        <div className="revision-note">Dibalikin: {p.revision_note}</div>
+                      )}
                       {p.source_link && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 6 }}>
                           {p.source_link

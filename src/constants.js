@@ -56,6 +56,12 @@ export function ownerCanDelete(post, profile) {
   return post.requested_by === profile.id && OWNER_DELETE_STATUSES.includes(post.status);
 }
 
+// Transisi "dibalikin" -- dari Sudah Diposting ke On Progress/Siap Posting.
+// Dipakai buat mutusin kapan admin wajib kasih alasan (revision_note).
+export function isRevisionReturn(fromStatus, toStatus) {
+  return fromStatus === "Sudah Diposting" && (toStatus === "On Progress" || toStatus === "Siap Posting");
+}
+
 export function sortByPostDate(posts) {
   return [...posts].sort((a, b) => {
     if (!a.post_date && !b.post_date) return 0;
@@ -96,6 +102,7 @@ export const HISTORY_FIELD_LABELS = {
   caption: "Catatan",
   source_link: "Link Sumber",
   rejection_note: "Alasan Ditolak",
+  revision_note: "Alasan Dikembalikan",
   created: "Dibuat",
   archived_at: "Arsip",
 };
