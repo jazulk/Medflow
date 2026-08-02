@@ -141,8 +141,8 @@ export function getDepartmentColor(name) {
 }
 
 // ---------- Prefix judul ([FEEDS] / [STORY] / [KONTEN]) ----------
-export const PREFIX_OPTIONS = ["[FEEDS]", "[STORY]", "[KONTEN]", "[ARTIKEL]", "[VIDEO]"];
-const PREFIX_REGEX = /^\[(FEEDS|STORY|KONTEN|ARTIKEL|VIDEO)\]\s*/i;
+export const PREFIX_OPTIONS = ["[FEEDS]", "[STORY]", "[REELS]", "[KONTEN]", "[ARTIKEL]", "[VIDEO]"];
+const PREFIX_REGEX = /^\[(FEEDS|STORY|REELS|KONTEN|ARTIKEL|VIDEO)\]\s*/i;
 
 // Pecah title lama jadi { prefix, topic } buat diisi ke form edit.
 // Kalau title nggak diawali prefix yang dikenal, default ke [FEEDS] dan topic = title asli (nggak ilang datanya).
