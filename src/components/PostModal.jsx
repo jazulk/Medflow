@@ -72,7 +72,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
     }
 
     if (isReturning && !form.revision_note.trim()) {
-      setFormError('Postingan ini "Sudah Diposting" -- kasih alasan dulu kenapa dibalikin ya (misal: salah tanggal upload, revisi desain dari Mulmed).');
+      setFormError(`Postingan ini mau dibalikin dari "${editingPost.status}" -- kasih alasan dulu ya (misal: salah tanggal upload, revisi desain dari Mulmed).`);
       return;
     }
 

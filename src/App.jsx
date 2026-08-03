@@ -201,7 +201,7 @@ export default function App() {
     // Kalau ini "balikin" dari Sudah Diposting ke On Progress/Siap Posting,
     // jangan langsung update -- minta alasan dulu lewat dialog.
     if (current && isRevisionReturn(current.status, status)) {
-      setRevisionPrompt({ id, toStatus: status });
+      setRevisionPrompt({ id, fromStatus: current.status, toStatus: status });
       return;
     }
     const { data, error } = await supabase.from("posts").update({ status }).eq("id", id).select();
@@ -470,6 +470,7 @@ export default function App() {
 
       <RevisionNoteDialog
         open={Boolean(revisionPrompt)}
+        fromStatus={revisionPrompt?.fromStatus || ""}
         targetStatus={revisionPrompt?.toStatus || ""}
         onConfirm={confirmRevision}
         onCancel={() => setRevisionPrompt(null)}

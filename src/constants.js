@@ -56,10 +56,13 @@ export function ownerCanDelete(post, profile) {
   return post.requested_by === profile.id && OWNER_DELETE_STATUSES.includes(post.status);
 }
 
-// Transisi "dibalikin" -- dari Sudah Diposting ke On Progress/Siap Posting.
-// Dipakai buat mutusin kapan admin wajib kasih alasan (revision_note).
+// Transisi "mundur" yang butuh alasan dari admin:
+//   - Sudah Diposting -> On Progress / Siap Posting (udah kepublish, ditarik balik)
+//   - Siap Posting -> On Progress (udah siap upload, ternyata ada revisi)
 export function isRevisionReturn(fromStatus, toStatus) {
-  return fromStatus === "Sudah Diposting" && (toStatus === "On Progress" || toStatus === "Siap Posting");
+  if (fromStatus === "Sudah Diposting" && (toStatus === "On Progress" || toStatus === "Siap Posting")) return true;
+  if (fromStatus === "Siap Posting" && toStatus === "On Progress") return true;
+  return false;
 }
 
 export function sortByPostDate(posts) {
@@ -141,8 +144,8 @@ export function getDepartmentColor(name) {
 }
 
 // ---------- Prefix judul ([FEEDS] / [STORY] / [KONTEN]) ----------
-export const PREFIX_OPTIONS = ["[FEEDS]", "[STORY]", "[REELS]", "[KONTEN]", "[ARTIKEL]", "[VIDEO]"];
-const PREFIX_REGEX = /^\[(FEEDS|STORY|REELS|KONTEN|ARTIKEL|VIDEO)\]\s*/i;
+export const PREFIX_OPTIONS = ["[FEEDS]", "[STORY]", "[KONTEN]", "[ARTIKEL]", "[VIDEO]"];
+const PREFIX_REGEX = /^\[(FEEDS|STORY|KONTEN|ARTIKEL|VIDEO)\]\s*/i;
 
 // Pecah title lama jadi { prefix, topic } buat diisi ke form edit.
 // Kalau title nggak diawali prefix yang dikenal, default ke [FEEDS] dan topic = title asli (nggak ilang datanya).

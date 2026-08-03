@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function RevisionNoteDialog({ open, targetStatus, onConfirm, onCancel }) {
+export default function RevisionNoteDialog({ open, fromStatus, targetStatus, onConfirm, onCancel }) {
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export default function RevisionNoteDialog({ open, targetStatus, onConfirm, onCa
       <div className="modal small" role="dialog" aria-modal="true" aria-label="Alasan dikembalikan" onClick={(e) => e.stopPropagation()}>
         <h2>Balikin ke "{targetStatus}"?</h2>
         <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: "-6px 0 14px", lineHeight: 1.5 }}>
-          Postingan ini udah "Sudah Diposting". Kasih alasan kenapa dibalikin (misal: salah tanggal upload, ada revisi desain dari Mulmed) biar PIC/bidang-nya tau.
+          Postingan ini mau dibalikin dari "{fromStatus}" ke "{targetStatus}". Kasih alasan kenapa dibalikin (misal: salah tanggal upload, ada revisi desain dari Mulmed) biar PIC/bidang-nya tau.
         </p>
         <div className="field">
           <textarea
