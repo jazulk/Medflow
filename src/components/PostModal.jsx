@@ -76,7 +76,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
       return;
     }
 
-    if (form.post_time) {
+    if (!isAdmin && form.post_time) {
       const [h, m] = form.post_time.split(":").map(Number);
       const minutes = h * 60 + m;
       if (minutes < 8 * 60 || minutes > 21 * 60) {
