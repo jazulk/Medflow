@@ -77,6 +77,16 @@ function sourceLinksHtml(sourceLink: string | null) {
   );
 }
 
+// Deadline desain = H-1 dari tanggal posting (post_date - 1 hari)
+function minusOneDay(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() - 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function buildEmail(kind: "baru" | "revisi" | "hapus", bidangName: string, recordRaw: any) {
   const record = {
     ...recordRaw,
@@ -97,13 +107,16 @@ function buildEmail(kind: "baru" | "revisi" | "hapus", bidangName: string, recor
   const label = labelMap[kind];
   const subject = `[Medflow] ${label} dari ${bidangName}`;
 
+  // deadline desain nggak relevan lagi buat email "dihapus" (postingannya udah nggak ada)
+  const deadlineDesain = kind !== "hapus" && record.post_date ? minusOneDay(record.post_date) : null;
+
   const textBody = `
 ${label} dari bidang ${bidangName}.
 
 Judul       : ${record.title}
 Platform    : ${record.platform}
 Status      : ${record.status}
-Tgl Posting : ${record.post_date || "-"} ${record.post_time || ""}
+Tgl Posting : ${record.post_date || "-"} ${record.post_time || ""}${deadlineDesain ? `\nDeadline Desain : ${deadlineDesain} (H-1 dari tanggal posting)` : ""}
 PIC         : ${record.pic || "-"}
 Catatan     : ${record.caption || "-"}
 Link Sumber : ${record.source_link || "-"}
@@ -119,6 +132,7 @@ ${closingMap[kind]}
       <tr><td style="color:#6E6892;">Platform</td><td>: ${escapeHtml(record.platform)}</td></tr>
       <tr><td style="color:#6E6892;">Status</td><td>: ${escapeHtml(record.status)}</td></tr>
       <tr><td style="color:#6E6892;vertical-align:top;">Tgl Posting</td><td>: ${escapeHtml(record.post_date || "-")} ${escapeHtml(record.post_time || "")}</td></tr>
+      ${deadlineDesain ? `<tr><td style="color:#6E6892;vertical-align:top;">Deadline Desain</td><td>: <b>${escapeHtml(deadlineDesain)}</b> <span style="color:#6E6892;">(H-1 dari tanggal posting)</span></td></tr>` : ""}
       <tr><td style="color:#6E6892;">PIC</td><td>: ${escapeHtml(record.pic || "-")}</td></tr>
       <tr><td style="color:#6E6892;vertical-align:top;">Catatan</td><td>: ${escapeHtmlMultiline(record.caption || "-")}</td></tr>
       <tr><td style="color:#6E6892;vertical-align:top;">Link Sumber</td><td>: ${sourceLinksHtml(record.source_link)}</td></tr>

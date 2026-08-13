@@ -199,7 +199,14 @@ function formatHistoryValue(field, val) {
   if (val === null || val === undefined || val === "") return "-";
   if (field === "post_date") return formatDateShort(val);
   if (field === "post_time") return String(val).slice(0, 5);
-  return String(val).length > 60 ? String(val).slice(0, 60) + "..." : String(val);
+  return String(val);
+}
+
+// Dipake buat versi ringkas (collapsed) di panel Riwayat Status.
+export const HISTORY_TRUNCATE_LEN = 60;
+export function truncateText(str, len = HISTORY_TRUNCATE_LEN) {
+  const s = String(str);
+  return s.length > len ? s.slice(0, len) + "..." : s;
 }
 
 export function formatHistoryChange(change) {

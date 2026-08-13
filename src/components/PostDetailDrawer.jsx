@@ -9,6 +9,8 @@ import {
   getHistoryIconType,
   ownerCanEdit,
   ownerCanDelete,
+  truncateText,
+  HISTORY_TRUNCATE_LEN,
 } from "../constants";
 
 const ICON_BY_TYPE = {
@@ -20,6 +22,29 @@ const ICON_BY_TYPE = {
   rejected: { symbol: "✕", bg: "var(--coral-soft)", fg: "var(--coral)" },
   edited: { symbol: "✎", bg: "var(--violet-soft)", fg: "var(--violet)" },
 };
+
+// Satu baris perubahan di Riwayat Status. Default nampilin teks lengkap;
+// kalau kepanjangan, ada tombol kecil buat diringkas (dan sebaliknya).
+function HistoryChangeLine({ text }) {
+  const [expanded, setExpanded] = useState(true);
+  const isLong = text.length > HISTORY_TRUNCATE_LEN;
+
+  return (
+    <div className="timeline-desc">
+      {expanded || !isLong ? text : truncateText(text)}
+      {isLong && (
+        <button
+          type="button"
+          className="history-toggle"
+          onClick={() => setExpanded((v) => !v)}
+          aria-label={expanded ? "Ringkas catatan" : "Tampilkan catatan lengkap"}
+        >
+          {expanded ? "Ringkas" : "Selengkapnya"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDelete, onStatusChange }) {
   const [history, setHistory] = useState([]);
@@ -167,7 +192,7 @@ export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDel
                         </div>
                         <div className="timeline-by">{h.changed_by_name || "System"}</div>
                         {(h.changes || []).map((c, i) => (
-                          <div className="timeline-desc" key={i}>{formatHistoryChange(c)}</div>
+                          <HistoryChangeLine key={i} text={formatHistoryChange(c)} />
                         ))}
                       </div>
                     </div>
