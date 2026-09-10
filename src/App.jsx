@@ -10,8 +10,9 @@ import PostDetailDrawer from "./components/PostDetailDrawer";
 import Toast from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 import RevisionNoteDialog from "./components/RevisionNoteDialog";
+import RequestLockDialog from "./components/RequestLockDialog";
 import { useDebounce } from "./hooks/useDebounce";
-import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn } from "./constants";
+import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort } from "./constants";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -42,6 +43,8 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
+  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_max_date: null, feed_lock_prefixes: [], feed_lock_message: "" });
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -116,6 +119,44 @@ export default function App() {
 
     return () => supabase.removeChannel(channel);
   }, [profile]);
+
+  // ---------- App settings (feed lock): fetch awal + realtime ----------
+  useEffect(() => {
+    if (!profile) return;
+    supabase
+      .from("app_settings")
+      .select("feed_lock_enabled, feed_lock_max_date, feed_lock_prefixes, feed_lock_message")
+      .eq("id", true)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) setAppSettings(data);
+      });
+
+    const channel = supabase
+      .channel("app-settings-changes")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, (payload) => {
+        setAppSettings(payload.new);
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [profile]);
+
+  async function saveLockSettings(next) {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .update({ ...next, updated_by: profile.id, updated_at: new Date().toISOString() })
+      .eq("id", true)
+      .select()
+      .single();
+    if (error) {
+      showToast("Gagal update pengaturan: " + error.message, "error");
+      return;
+    }
+    setAppSettings(data);
+    setLockDialogOpen(false);
+    showToast(next.feed_lock_enabled ? "Batas tanggal posting diaktifkan" : "Pengaturan disimpan");
+  }
 
   async function fetchPosts() {
     setLoadingPosts(true);
@@ -346,6 +387,15 @@ export default function App() {
                 </button>
               )}
               {isAdmin && (
+                <button
+                  className={appSettings.feed_lock_enabled ? "logout-btn lock-active" : "logout-btn"}
+                  onClick={() => setLockDialogOpen(true)}
+                  title="Atur batas tanggal posting per format"
+                >
+                  {appSettings.feed_lock_enabled ? "🔒 Batas Aktif" : "🔓 Batas Nonaktif"}
+                </button>
+              )}
+              {isAdmin && (
                 <button className="logout-btn" onClick={handleExport} title="Export ke Excel">Export</button>
               )}
               <button className="logout-btn" onClick={handleLogout} aria-label="Keluar dari akun">Keluar</button>
@@ -353,6 +403,20 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {appSettings.feed_lock_enabled && (
+        <div className="wrap">
+          <div className="lock-banner">
+            <span>
+              🔒 {appSettings.feed_lock_message ||
+                `Format ${(appSettings.feed_lock_prefixes || []).join(", ")} cuma bisa diajukan buat posting maksimal ${formatDateShort(appSettings.feed_lock_max_date)}.`}
+            </span>
+            {isAdmin && (
+              <button className="lock-banner-btn" onClick={() => setLockDialogOpen(true)}>Kelola</button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="wrap">
         <div className="stats">
@@ -455,6 +519,7 @@ export default function App() {
           profile={profile}
           editingPost={editingPost}
           bidangAccounts={bidangAccounts}
+          feedLock={appSettings}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
         />
@@ -475,6 +540,15 @@ export default function App() {
         onConfirm={confirmRevision}
         onCancel={() => setRevisionPrompt(null)}
       />
+
+      {isAdmin && (
+        <RequestLockDialog
+          open={lockDialogOpen}
+          settings={appSettings}
+          onSave={saveLockSettings}
+          onCancel={() => setLockDialogOpen(false)}
+        />
+      )}
 
       <Toast toast={toast} />
     </>

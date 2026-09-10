@@ -18,7 +18,7 @@ const emptyForm = {
   revision_note: "",
 };
 
-export default function PostModal({ profile, editingPost, bidangAccounts, onClose, onSave }) {
+export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   const isExemptFromH5 = profile.username === "advo"; // sering ada info mendadak, dikecualikan dari H-5
@@ -105,6 +105,18 @@ export default function PostModal({ profile, editingPost, bidangAccounts, onClos
           return;
         }
       }
+    }
+
+    if (
+      !isAdmin &&
+      feedLock?.feed_lock_enabled &&
+      feedLock.feed_lock_max_date &&
+      (feedLock.feed_lock_prefixes || []).includes(form.prefix) &&
+      form.post_date &&
+      form.post_date > feedLock.feed_lock_max_date
+    ) {
+      setFormError(feedLock.feed_lock_message || `Format ${form.prefix} cuma bisa diajukan buat posting maksimal ${feedLock.feed_lock_max_date}.`);
+      return;
     }
 
     const payload = {
