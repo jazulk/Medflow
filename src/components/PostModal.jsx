@@ -110,12 +110,14 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
     if (
       !isAdmin &&
       feedLock?.feed_lock_enabled &&
-      feedLock.feed_lock_max_date &&
+      feedLock.feed_lock_start_date &&
+      feedLock.feed_lock_end_date &&
       (feedLock.feed_lock_prefixes || []).includes(form.prefix) &&
       form.post_date &&
-      form.post_date > feedLock.feed_lock_max_date
+      form.post_date >= feedLock.feed_lock_start_date &&
+      form.post_date <= feedLock.feed_lock_end_date
     ) {
-      setFormError(feedLock.feed_lock_message || `Format ${form.prefix} cuma bisa diajukan buat posting maksimal ${feedLock.feed_lock_max_date}.`);
+      setFormError(feedLock.feed_lock_message || `Format ${form.prefix} nggak bisa buat posting tanggal ${feedLock.feed_lock_start_date} - ${feedLock.feed_lock_end_date}.`);
       return;
     }
 

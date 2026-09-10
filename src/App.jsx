@@ -43,7 +43,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
-  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_max_date: null, feed_lock_prefixes: [], feed_lock_message: "" });
+  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "" });
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
 
   const showToast = useCallback((message, type = "success") => {
@@ -125,7 +125,7 @@ export default function App() {
     if (!profile) return;
     supabase
       .from("app_settings")
-      .select("feed_lock_enabled, feed_lock_max_date, feed_lock_prefixes, feed_lock_message")
+      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message")
       .eq("id", true)
       .single()
       .then(({ data, error }) => {
@@ -409,7 +409,7 @@ export default function App() {
           <div className="lock-banner">
             <span>
               🔒 {appSettings.feed_lock_message ||
-                `Format ${(appSettings.feed_lock_prefixes || []).join(", ")} cuma bisa diajukan buat posting maksimal ${formatDateShort(appSettings.feed_lock_max_date)}.`}
+                `Format ${(appSettings.feed_lock_prefixes || []).join(", ")} nggak bisa buat posting tanggal ${formatDateShort(appSettings.feed_lock_start_date)} - ${formatDateShort(appSettings.feed_lock_end_date)}.`}
             </span>
             {isAdmin && (
               <button className="lock-banner-btn" onClick={() => setLockDialogOpen(true)}>Kelola</button>
