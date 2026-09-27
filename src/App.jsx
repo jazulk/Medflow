@@ -12,6 +12,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import RevisionNoteDialog from "./components/RevisionNoteDialog";
 import RequestLockDialog from "./components/RequestLockDialog";
 import DailyQuotaDialog from "./components/DailyQuotaDialog";
+import AnnouncementDialog from "./components/AnnouncementDialog";
 import { useDebounce } from "./hooks/useDebounce";
 import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort } from "./constants";
 
@@ -44,10 +45,11 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
-  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "" });
+  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "", announcement_enabled: false, announcement_message: "" });
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const [quotaRules, setQuotaRules] = useState([]);
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [announceDialogOpen, setAnnounceDialogOpen] = useState(false);
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -128,7 +130,7 @@ export default function App() {
     if (!profile) return;
     supabase
       .from("app_settings")
-      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message")
+      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message, announcement_enabled, announcement_message")
       .eq("id", true)
       .single()
       .then(({ data, error }) => {
@@ -159,6 +161,22 @@ export default function App() {
     setAppSettings(data);
     setLockDialogOpen(false);
     showToast(next.feed_lock_enabled ? "Batas tanggal posting diaktifkan" : "Pengaturan disimpan");
+  }
+
+  async function saveAnnouncement(next) {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .update({ ...next, updated_by: profile.id, updated_at: new Date().toISOString() })
+      .eq("id", true)
+      .select()
+      .single();
+    if (error) {
+      showToast("Gagal update pengumuman: " + error.message, "error");
+      return;
+    }
+    setAppSettings(data);
+    setAnnounceDialogOpen(false);
+    showToast(next.announcement_enabled ? "Pengumuman ditampilkan" : "Pengumuman disembunyikan");
   }
 
   // ---------- Kuota harian per prefix+platform: fetch awal + realtime ----------
@@ -413,6 +431,12 @@ export default function App() {
 
   return (
     <>
+      {appSettings.announcement_enabled && appSettings.announcement_message && (
+        <div className="announce-banner">
+          <span>📢 {appSettings.announcement_message}</span>
+        </div>
+      )}
+
       <div className="hero">
         <div className="hero-inner">
           <p className="eyebrow">Medfo · BEM FIK</p>
@@ -447,6 +471,15 @@ export default function App() {
                   title="Atur kuota harian per format & platform"
                 >
                   📊 Kuota Harian{quotaRules.length ? ` (${quotaRules.length})` : ""}
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  className={appSettings.announcement_enabled ? "logout-btn lock-active" : "logout-btn"}
+                  onClick={() => setAnnounceDialogOpen(true)}
+                  title="Atur pengumuman di bagian atas halaman"
+                >
+                  📢 Pengumuman
                 </button>
               )}
               {isAdmin && (
@@ -612,6 +645,15 @@ export default function App() {
           onUpdate={updateQuotaRule}
           onDelete={deleteQuotaRule}
           onCancel={() => setQuotaDialogOpen(false)}
+        />
+      )}
+
+      {isAdmin && (
+        <AnnouncementDialog
+          open={announceDialogOpen}
+          settings={appSettings}
+          onSave={saveAnnouncement}
+          onCancel={() => setAnnounceDialogOpen(false)}
         />
       )}
 

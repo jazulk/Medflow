@@ -47,6 +47,7 @@ h1.pagetitle{font-size:28px;margin:0;font-weight:800;}
 .role-badge{font-size:12px;font-weight:700;background:rgba(255,255,255,.18);padding:8px 12px;border-radius:10px;color:#fff;}
 .logout-btn{background:rgba(255,255,255,.18);border:none;color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;}
 .logout-btn.lock-active{background:var(--coral);}
+.announce-banner{background:var(--violet);color:#fff;text-align:center;padding:10px 20px;font-size:13px;font-weight:700;line-height:1.4;}
 .lock-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--amber-soft);color:#8a6205;border:1px solid #f0dca3;border-radius:12px;padding:12px 16px;margin:-6px 0 18px;font-size:13px;font-weight:600;line-height:1.4;}
 .lock-banner-btn{flex-shrink:0;background:none;border:1.5px solid #8a6205;color:#8a6205;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;}
 .lock-toggle-row{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;cursor:pointer;}
