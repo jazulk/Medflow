@@ -11,6 +11,7 @@ import Toast from "./components/Toast";
 import ConfirmDialog from "./components/ConfirmDialog";
 import RevisionNoteDialog from "./components/RevisionNoteDialog";
 import RequestLockDialog from "./components/RequestLockDialog";
+import DailyQuotaDialog from "./components/DailyQuotaDialog";
 import { useDebounce } from "./hooks/useDebounce";
 import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort } from "./constants";
 
@@ -45,6 +46,8 @@ export default function App() {
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
   const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "" });
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
+  const [quotaRules, setQuotaRules] = useState([]);
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
 
   const showToast = useCallback((message, type = "success") => {
     setToast({ message, type });
@@ -156,6 +159,48 @@ export default function App() {
     setAppSettings(data);
     setLockDialogOpen(false);
     showToast(next.feed_lock_enabled ? "Batas tanggal posting diaktifkan" : "Pengaturan disimpan");
+  }
+
+  // ---------- Kuota harian per prefix+platform: fetch awal + realtime ----------
+  useEffect(() => {
+    if (!profile) return;
+    supabase
+      .from("daily_quota_rules")
+      .select("*")
+      .order("prefix", { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && data) setQuotaRules(data);
+      });
+
+    const channel = supabase
+      .channel("daily-quota-rules-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "daily_quota_rules" }, () => {
+        supabase
+          .from("daily_quota_rules")
+          .select("*")
+          .order("prefix", { ascending: true })
+          .then(({ data, error }) => {
+            if (!error && data) setQuotaRules(data);
+          });
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [profile]);
+
+  async function addQuotaRule(rule) {
+    const { error } = await supabase.from("daily_quota_rules").insert(rule);
+    if (error) showToast("Gagal nambah rule: " + error.message, "error");
+  }
+
+  async function updateQuotaRule(id, max_per_day) {
+    const { error } = await supabase.from("daily_quota_rules").update({ max_per_day }).eq("id", id);
+    if (error) showToast("Gagal update rule: " + error.message, "error");
+  }
+
+  async function deleteQuotaRule(id) {
+    const { error } = await supabase.from("daily_quota_rules").delete().eq("id", id);
+    if (error) showToast("Gagal hapus rule: " + error.message, "error");
   }
 
   async function fetchPosts() {
@@ -396,6 +441,15 @@ export default function App() {
                 </button>
               )}
               {isAdmin && (
+                <button
+                  className="logout-btn"
+                  onClick={() => setQuotaDialogOpen(true)}
+                  title="Atur kuota harian per format & platform"
+                >
+                  📊 Kuota Harian{quotaRules.length ? ` (${quotaRules.length})` : ""}
+                </button>
+              )}
+              {isAdmin && (
                 <button className="logout-btn" onClick={handleExport} title="Export ke Excel">Export</button>
               )}
               <button className="logout-btn" onClick={handleLogout} aria-label="Keluar dari akun">Keluar</button>
@@ -547,6 +601,17 @@ export default function App() {
           settings={appSettings}
           onSave={saveLockSettings}
           onCancel={() => setLockDialogOpen(false)}
+        />
+      )}
+
+      {isAdmin && (
+        <DailyQuotaDialog
+          open={quotaDialogOpen}
+          rules={quotaRules}
+          onAdd={addQuotaRule}
+          onUpdate={updateQuotaRule}
+          onDelete={deleteQuotaRule}
+          onCancel={() => setQuotaDialogOpen(false)}
         />
       )}
 
