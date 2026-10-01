@@ -91,18 +91,26 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         return;
       }
       if (!isExemptFromH5) {
-        const minDays = form.content_ready ? 1 : 5;
-        const minDate = new Date();
-        minDate.setHours(0, 0, 0, 0);
-        minDate.setDate(minDate.getDate() + minDays);
-        const chosenDate = new Date(form.post_date + "T00:00:00");
-        if (chosenDate < minDate) {
-          setFormError(
-            form.content_ready
-              ? "Request konten yang udah jadi minimal diajukan H-1 dari tanggal posting."
-              : "Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau kontennya udah jadi (tinggal upload/repost), centang opsi di bawah biar cukup H-1."
-          );
-          return;
+        if (form.content_ready) {
+          if (!form.post_time) {
+            setFormError("Jam posting wajib diisi buat konten yang udah jadi, biar bisa dicek minimal 3 jam sebelumnya.");
+            return;
+          }
+          const target = new Date(`${form.post_date}T${form.post_time}:00`);
+          const minTarget = new Date(Date.now() + 3 * 60 * 60 * 1000);
+          if (target < minTarget) {
+            setFormError("Request konten yang udah jadi minimal diajukan 3 jam sebelum waktu posting.");
+            return;
+          }
+        } else {
+          const minDate = new Date();
+          minDate.setHours(0, 0, 0, 0);
+          minDate.setDate(minDate.getDate() + 5);
+          const chosenDate = new Date(form.post_date + "T00:00:00");
+          if (chosenDate < minDate) {
+            setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau kontennya udah jadi (tinggal upload/repost), centang opsi di bawah biar cukup 3 jam sebelum posting.");
+            return;
+          }
         }
       }
     }
@@ -232,7 +240,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
               </label>
               {form.content_ready && !isExemptFromH5 && (
                 <p style={{ fontSize: 11.5, color: "var(--mint)", margin: "6px 0 0", fontWeight: 600 }}>
-                  Karena kontennya udah jadi, cukup diajukan minimal H-1.
+                  Karena kontennya udah jadi, cukup diajukan minimal 3 jam sebelum jam posting. Jangan lupa isi jam posting-nya ya.
                 </p>
               )}
             </div>
