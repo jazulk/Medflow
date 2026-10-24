@@ -15,6 +15,7 @@ const emptyForm = {
   caption: "",
   source_link: "",
   rejection_note: "",
+  note_visible: false,
   revision_note: "",
 };
 
@@ -48,6 +49,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         caption: editingPost.caption || "",
         source_link: editingPost.source_link || "",
         rejection_note: editingPost.rejection_note || "",
+        note_visible: !!editingPost.note_visible,
         revision_note: editingPost.revision_note || "",
       });
     } else {
@@ -68,6 +70,11 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
 
     if (!form.topic.trim()) {
       setFormError("Judul postingan wajib diisi ya.");
+      return;
+    }
+
+    if (isAdmin && form.note_visible && !form.rejection_note.trim()) {
+      setFormError("Centang tampilkan alasan lagi nyala, tapi alasannya masih kosong. Isi dulu atau matiin centangnya.");
       return;
     }
 
@@ -141,6 +148,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
       caption: form.caption,
       source_link: form.source_link,
       rejection_note: form.rejection_note,
+      note_visible: form.note_visible,
       revision_note: form.revision_note,
     };
     // Cuma admin yang boleh nitip/ubah atas nama bidang mana request ini --
@@ -308,14 +316,26 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
             />
           </div>
 
-          {isAdmin && form.status === "Ditolak" && (
+          {isAdmin && (
             <div className="field">
-              <label>Alasan Ditolak (kasih tau bidang secara manual ya)</label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={form.note_visible}
+                  onChange={(e) => set("note_visible", e.target.checked)}
+                />
+                Tampilkan alasan di kartu & detail (keliatan semua orang)
+              </label>
               <textarea
                 value={form.rejection_note}
                 onChange={(e) => set("rejection_note", e.target.value)}
-                placeholder="misal: sudah lewat momentum, atau duplikat sama konten lain"
+                placeholder="misal: ditahan dulu karena lagi persiapan carousel, atau duplikat sama konten lain"
+                style={{ marginTop: 8 }}
               />
+              {!form.note_visible && form.rejection_note.trim() && (
+                <p className="note-toggle-hint">Alasan tersimpan tapi lagi disembunyikan. Nyalain centang di atas buat nampilin lagi.</p>
+              )}
             </div>
           )}
 

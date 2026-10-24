@@ -1,6 +1,6 @@
 // Supabase Edge Function: remind-h1
 // Dipanggil otomatis tiap hari (lewat pg_cron) buat ngecek postingan yang
-// jadwalnya BESOK dan statusnya belum "Sudah Diposting"/"Ditolak", terus
+// jadwalnya BESOK dan statusnya belum "Sudah Diposting"/"Pending", terus
 // ngirim 1 email ringkasan ke admin (Mulmed & Pubinfo) biar nggak kelewat.
 
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     .from("posts")
     .select("title, platform, pic, post_time, requested_by_name, status")
     .eq("post_date", targetDate)
-    .not("status", "in", '("Sudah Diposting","Ditolak")')
+    .not("status", "in", '("Sudah Diposting","Pending")')
     .order("post_time", { ascending: true });
 
   if (error) {

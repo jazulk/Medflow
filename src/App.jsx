@@ -402,7 +402,7 @@ export default function App() {
       "PJ Pengerjaan": p.pj || "-",
       Caption: p.caption || "-",
       "Link Sumber": p.source_link || "-",
-      "Alasan Ditolak": p.rejection_note || "-",
+      "Alasan Admin": p.rejection_note || "-",
       "Alasan Dikembalikan": p.revision_note || "-",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);

@@ -20,6 +20,7 @@ const ICON_BY_TYPE = {
   approved: { symbol: "✓", bg: "var(--mint-soft)", fg: "var(--mint)" },
   check: { symbol: "✓", bg: "var(--mint)", fg: "#fff" },
   rejected: { symbol: "✕", bg: "var(--coral-soft)", fg: "var(--coral)" },
+  pending: { symbol: "…", bg: "var(--gray-soft)", fg: "var(--ink-soft)" },
   edited: { symbol: "✎", bg: "var(--violet-soft)", fg: "var(--violet)" },
 };
 
@@ -132,10 +133,10 @@ export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDel
             {post.pj && <div className="detail-row"><span>PJ Pengerjaan</span><b>{post.pj}</b></div>}
           </div>
 
-          {post.status === "Ditolak" && post.rejection_note && (
+          {post.note_visible && post.rejection_note && (
             <div className="detail-section">
-              <h3>Alasan Ditolak</h3>
-              <div className="caption-box" style={{ color: "var(--coral)" }}>{post.rejection_note}</div>
+              <h3>Alasan dari Admin</h3>
+              <div className="caption-box" style={{ color: "var(--violet)" }}>{post.rejection_note}</div>
             </div>
           )}
 

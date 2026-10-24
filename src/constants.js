@@ -3,7 +3,7 @@ export const STATUSES = [
   { key: "On Progress", color: "#FFB800" },
   { key: "Siap Posting", color: "#7C5CFC" },
   { key: "Sudah Diposting", color: "#00C896" },
-  { key: "Ditolak", color: "#9CA3AF" },
+  { key: "Pending", color: "#9CA3AF" },
 ];
 
 export const PLATFORM_COLORS = {
@@ -34,7 +34,7 @@ export function isArchived(post) {
 }
 export function isOverdue(post) {
   if (!post.post_date) return false;
-  if (post.status === "Sudah Diposting" || post.status === "Ditolak") return false;
+  if (post.status === "Sudah Diposting" || post.status === "Pending") return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const postDate = new Date(post.post_date + "T00:00:00");
@@ -44,7 +44,7 @@ export function isOverdue(post) {
 // Bidang cuma boleh edit/hapus postingan MEREKA sendiri, dan cuma di jendela status tertentu.
 // Di luar itu (Siap Posting, Sudah Diposting), cuma admin yang bisa ubah/hapus.
 export const OWNER_EDIT_STATUSES = ["Request", "On Progress"];
-export const OWNER_DELETE_STATUSES = ["Request", "Ditolak"];
+export const OWNER_DELETE_STATUSES = ["Request", "Pending"];
 
 export function ownerCanEdit(post, profile) {
   if (profile.role === "admin") return true;
@@ -104,7 +104,8 @@ export const HISTORY_FIELD_LABELS = {
   pj: "PJ Pengerjaan",
   caption: "Catatan",
   source_link: "Link Sumber",
-  rejection_note: "Alasan Ditolak",
+  rejection_note: "Alasan Admin",
+  note_visible: "Tampilkan Alasan",
   revision_note: "Alasan Dikembalikan",
   created: "Dibuat",
   archived_at: "Arsip",
@@ -176,7 +177,7 @@ export function getHistoryIconType(historyItem) {
       case "Sudah Diposting": return "check";
       case "Siap Posting": return "approved";
       case "On Progress": return "progress";
-      case "Ditolak": return "rejected";
+      case "Pending": return "pending";
       default: return "clock";
     }
   }
@@ -199,6 +200,7 @@ function formatHistoryValue(field, val) {
   if (val === null || val === undefined || val === "") return "-";
   if (field === "post_date") return formatDateShort(val);
   if (field === "post_time") return String(val).slice(0, 5);
+  if (field === "note_visible") return String(val) === "true" ? "Ya" : "Tidak";
   return String(val);
 }
 

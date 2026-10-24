@@ -110,8 +110,8 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                           </span>
                         </div>
                       </div>
-                      {p.status === "Ditolak" && p.rejection_note && (
-                        <div className="rejection-note">Alasan: {p.rejection_note}</div>
+                      {p.note_visible && p.rejection_note && (
+                        <div className="admin-note">Alasan: {p.rejection_note}</div>
                       )}
                       {(p.status === "On Progress" || p.status === "Siap Posting") && p.revision_note && (
                         <div className="revision-note">Dibalikin: {p.revision_note}</div>
