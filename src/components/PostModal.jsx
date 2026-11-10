@@ -22,7 +22,6 @@ const emptyForm = {
 export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
-  const isExemptFromH5 = profile.username === "advo"; // sering ada info mendadak, dikecualikan dari H-5
   // Modal ini sekarang cuma kebuka lewat tombol "+ Tambah" atau tombol "Edit" di drawer,
   // yang keduanya udah ngecek izin duluan -- tapi tetep dijaga di sini biar aman kalau ada jalur lain.
   const canEditThis = isAdmin || (editingPost ? ownerCanEdit(editingPost, profile) : !isViewer);
@@ -97,27 +96,25 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         setFormError("Tanggal posting wajib diisi ya.");
         return;
       }
-      if (!isExemptFromH5) {
-        if (form.content_ready) {
-          if (!form.post_time) {
-            setFormError("Jam posting wajib diisi buat konten yang udah jadi, biar bisa dicek minimal 3 jam sebelumnya.");
-            return;
-          }
-          const target = new Date(`${form.post_date}T${form.post_time}:00`);
-          const minTarget = new Date(Date.now() + 3 * 60 * 60 * 1000);
-          if (target < minTarget) {
-            setFormError("Request konten yang udah jadi minimal diajukan 3 jam sebelum waktu posting.");
-            return;
-          }
-        } else {
-          const minDate = new Date();
-          minDate.setHours(0, 0, 0, 0);
-          minDate.setDate(minDate.getDate() + 5);
-          const chosenDate = new Date(form.post_date + "T00:00:00");
-          if (chosenDate < minDate) {
-            setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau kontennya udah jadi (tinggal upload/repost), centang opsi di bawah biar cukup 3 jam sebelum posting.");
-            return;
-          }
+      if (form.content_ready) {
+        if (!form.post_time) {
+          setFormError("Jam posting wajib diisi buat konten yang udah jadi, biar bisa dicek minimal 3 jam sebelumnya.");
+          return;
+        }
+        const target = new Date(`${form.post_date}T${form.post_time}:00`);
+        const minTarget = new Date(Date.now() + 3 * 60 * 60 * 1000);
+        if (target < minTarget) {
+          setFormError("Request konten yang udah jadi minimal diajukan 3 jam sebelum waktu posting.");
+          return;
+        }
+      } else {
+        const minDate = new Date();
+        minDate.setHours(0, 0, 0, 0);
+        minDate.setDate(minDate.getDate() + 5);
+        const chosenDate = new Date(form.post_date + "T00:00:00");
+        if (chosenDate < minDate) {
+          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau mepet atau kontennya udah jadi (story, tinggal upload/repost), centang opsi \"Konten udah jadi\" di bawah biar cukup 3 jam sebelum posting.");
+          return;
         }
       }
     }
@@ -183,11 +180,6 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
     <div className="overlay">
       <div className="modal">
         <h2>{editingPost ? "Edit Postingan" : isAdmin ? "Tambah Postingan" : "Request Postingan"}</h2>
-        {isExemptFromH5 && !isAdmin && !editingPost && (
-          <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: "-8px 0 14px" }}>
-            Bidang Advokasi dikecualikan dari aturan H-5 (buat info mendadak).
-          </p>
-        )}
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label>Platform</label>
@@ -246,7 +238,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
                 />
                 Konten udah jadi dari bidang (poster di story, repost story, konten tiktok) — tinggal upload/repost aja
               </label>
-              {form.content_ready && !isExemptFromH5 && (
+              {form.content_ready && (
                 <p style={{ fontSize: 11.5, color: "var(--mint)", margin: "6px 0 0", fontWeight: 600 }}>
                   Karena kontennya udah jadi, cukup diajukan minimal 3 jam sebelum jam posting. Jangan lupa isi jam posting-nya ya.
                 </p>
