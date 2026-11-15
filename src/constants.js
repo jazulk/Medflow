@@ -217,3 +217,28 @@ export function formatHistoryChange(change) {
   if (change.field === "archived_at") return change.new ? "Dipindah ke Arsip" : "Dikeluarkan dari Arsip";
   return `${label}: ${formatHistoryValue(change.field, change.old)} → ${formatHistoryValue(change.field, change.new)}`;
 }
+
+// ---------- Jatah keringanan request mepet ----------
+// Tanggal hari ini (WIB) dalam format YYYY-MM-DD.
+export function todayWIB() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+}
+
+// Tanggal hari ini + n hari (WIB), format YYYY-MM-DD.
+export function addDaysWIB(n) {
+  const [y, m, d] = todayWIB().split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + n));
+  return dt.toISOString().slice(0, 10);
+}
+
+// Postingan yang makan jatah mepet (sama persis kayak mepet_used() di DB):
+// is_mepet, bukan Pending, dan diajukan pada/setelah tanggal "mulai hitung".
+export function getMepetPosts(posts, since) {
+  return (posts || []).filter(
+    (p) => p.is_mepet && p.status !== "Pending" && (!since || (p.submit_date && p.submit_date >= since))
+  );
+}
+
+export function countMepetFor(posts, bidangName, since) {
+  return getMepetPosts(posts, since).filter((p) => p.requested_by_name === bidangName).length;
+}

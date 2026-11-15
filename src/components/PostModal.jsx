@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit, isRevisionReturn } from "../constants";
+import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit, isRevisionReturn, todayWIB, addDaysWIB } from "../constants";
 
 const emptyForm = {
   prefix: "[FEEDS]",
@@ -8,6 +8,7 @@ const emptyForm = {
   status: "Request",
   bidang_pengaju: "",
   content_ready: false,
+  is_mepet: false,
   post_date: "",
   post_time: "",
   pic: "",
@@ -19,7 +20,7 @@ const emptyForm = {
   revision_note: "",
 };
 
-export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, onClose, onSave }) {
+export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, mepetInfo, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   // Modal ini sekarang cuma kebuka lewat tombol "+ Tambah" atau tombol "Edit" di drawer,
@@ -31,6 +32,16 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
+  // Request baru dari bidang yang tanggalnya kurang dari H-5 (dan bukan konten udah jadi) = butuh jatah mepet.
+  const isNewBidangRequest = !isAdmin && !isViewer && !editingPost;
+  const needsMepet =
+    isNewBidangRequest &&
+    !form.content_ready &&
+    !!form.post_date &&
+    form.post_date >= todayWIB() &&
+    form.post_date < addDaysWIB(5);
+  const mepetRemaining = mepetInfo ? Math.max(mepetInfo.quota - mepetInfo.used, 0) : 0;
+
   useEffect(() => {
     if (editingPost) {
       const { prefix, topic } = splitPrefixFromTitle(editingPost.title);
@@ -41,6 +52,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         status: editingPost.status || "Request",
         bidang_pengaju: editingPost.requested_by_name || "",
         content_ready: !!editingPost.content_ready,
+        is_mepet: !!editingPost.is_mepet,
         post_date: editingPost.post_date || "",
         post_time: editingPost.post_time || "",
         pic: editingPost.pic || "",
@@ -107,13 +119,16 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
           setFormError("Request konten yang udah jadi minimal diajukan 3 jam sebelum waktu posting.");
           return;
         }
-      } else {
-        const minDate = new Date();
-        minDate.setHours(0, 0, 0, 0);
-        minDate.setDate(minDate.getDate() + 5);
-        const chosenDate = new Date(form.post_date + "T00:00:00");
-        if (chosenDate < minDate) {
-          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau mepet atau kontennya udah jadi (story, tinggal upload/repost), centang opsi \"Konten udah jadi\" di bawah biar cukup 3 jam sebelum posting.");
+      } else if (form.post_date < todayWIB()) {
+        setFormError("Tanggal posting udah lewat, pilih tanggal hari ini atau setelahnya.");
+        return;
+      } else if (form.post_date < addDaysWIB(5)) {
+        if (!form.is_mepet) {
+          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau emang mepet, nyalain \"Pakai keringanan mepet\" di bawah (jatah terbatas per bidang). Kalau kontennya udah jadi, centang \"Konten udah jadi\" biar cukup 3 jam sebelum posting.");
+          return;
+        }
+        if (mepetRemaining <= 0) {
+          setFormError("Jatah keringanan mepet bidang lu udah habis, jadi request ini harus minimal H-5 (atau centang \"Konten udah jadi\" kalau kontennya udah ada).");
           return;
         }
       }
@@ -138,6 +153,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
       platform: form.platform,
       status: form.status,
       content_ready: form.content_ready,
+      ...(isNewBidangRequest ? { is_mepet: needsMepet && form.is_mepet } : {}),
       post_date: form.post_date,
       post_time: form.post_time,
       pic: form.pic,
@@ -243,6 +259,26 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
                   Karena kontennya udah jadi, cukup diajukan minimal 3 jam sebelum jam posting. Jangan lupa isi jam posting-nya ya.
                 </p>
               )}
+            </div>
+          )}
+
+          {needsMepet && (
+            <div className="field mepet-box">
+              <label className="mepet-toggle-row">
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={form.is_mepet}
+                  disabled={mepetRemaining <= 0}
+                  onChange={(e) => set("is_mepet", e.target.checked)}
+                />
+                <span>⏱ Pakai keringanan mepet</span>
+              </label>
+              <p className={mepetRemaining > 0 ? "mepet-hint" : "mepet-hint empty"}>
+                {mepetRemaining > 0
+                  ? `Tanggal ini kurang dari H-5. Sisa jatah bidang lu: ${mepetRemaining} dari ${mepetInfo.quota}. Nyalain toggle ini buat tetap bisa request (jatah kepake 1).`
+                  : "Jatah keringanan mepet bidang lu udah habis. Pilih tanggal minimal H-5, atau centang \"Konten udah jadi\" kalau kontennya udah ada."}
+              </p>
             </div>
           )}
 

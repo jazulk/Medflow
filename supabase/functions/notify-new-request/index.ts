@@ -110,13 +110,16 @@ function buildEmail(kind: "baru" | "revisi" | "hapus", bidangName: string, recor
   // deadline desain nggak relevan lagi buat email "dihapus" (postingannya udah nggak ada)
   const deadlineDesain = kind !== "hapus" && record.post_date ? minusOneDay(record.post_date) : null;
 
+  // request mepet = pakai jatah keringanan bidang (admin perlu tau biar prioritas pengerjaannya jelas)
+  const mepet = kind !== "hapus" && record.is_mepet === true;
+
   const textBody = `
 ${label} dari bidang ${bidangName}.
 
 Judul       : ${record.title}
 Platform    : ${record.platform}
 Status      : ${record.status}
-Tgl Posting : ${record.post_date || "-"} ${record.post_time || ""}${deadlineDesain ? `\nDeadline Desain : ${deadlineDesain} (H-1 dari tanggal posting)` : ""}
+Tgl Posting : ${record.post_date || "-"} ${record.post_time || ""}${mepet ? "\nKeringanan  : MEPET (pakai jatah keringanan bidang)" : ""}${deadlineDesain ? `\nDeadline Desain : ${deadlineDesain} (H-1 dari tanggal posting)` : ""}
 PIC         : ${record.pic || "-"}
 Catatan     : ${record.caption || "-"}
 Link Sumber : ${record.source_link || "-"}
@@ -132,6 +135,7 @@ ${closingMap[kind]}
       <tr><td style="color:#6E6892;">Platform</td><td>: ${escapeHtml(record.platform)}</td></tr>
       <tr><td style="color:#6E6892;">Status</td><td>: ${escapeHtml(record.status)}</td></tr>
       <tr><td style="color:#6E6892;vertical-align:top;">Tgl Posting</td><td>: ${escapeHtml(record.post_date || "-")} ${escapeHtml(record.post_time || "")}</td></tr>
+      ${mepet ? `<tr><td style="color:#6E6892;vertical-align:top;">Keringanan</td><td>: <b style="color:#B8860B;">MEPET</b> <span style="color:#6E6892;">(pakai jatah keringanan bidang)</span></td></tr>` : ""}
       ${deadlineDesain ? `<tr><td style="color:#6E6892;vertical-align:top;">Deadline Desain</td><td>: <b>${escapeHtml(deadlineDesain)}</b> <span style="color:#6E6892;">(H-1 dari tanggal posting)</span></td></tr>` : ""}
       <tr><td style="color:#6E6892;">PIC</td><td>: ${escapeHtml(record.pic || "-")}</td></tr>
       <tr><td style="color:#6E6892;vertical-align:top;">Catatan</td><td>: ${escapeHtmlMultiline(record.caption || "-")}</td></tr>

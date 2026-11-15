@@ -286,3 +286,29 @@ h1.pagetitle{font-size:28px;margin:0;font-weight:800;}
   .login-card{padding:24px;}
 }
 
+
+/* ---------- jatah keringanan mepet ---------- */
+.mepet-box{background:var(--amber-soft);border:1px solid #f0dca3;border-radius:12px;padding:10px 12px;}
+.mepet-toggle-row{display:flex !important;align-items:center;gap:8px;cursor:pointer;font-size:13px !important;font-weight:800 !important;color:#8a6205 !important;text-transform:none !important;letter-spacing:0 !important;margin:0 !important;}
+.mepet-hint{font-size:12px;color:#8a6205;margin:6px 0 0;line-height:1.45;font-weight:600;}
+.mepet-hint.empty{color:var(--coral);}
+.mepet-chip{background:var(--amber-soft);color:#8a6205;border:1.5px solid #f0dca3;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer;}
+.mepet-chip.empty{background:var(--coral-soft);color:var(--coral);border-color:var(--coral-soft);}
+.mepet-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;max-height:44vh;overflow-y:auto;}
+.mepet-bidang{background:var(--gray-soft);border-radius:12px;padding:10px 12px;}
+.mepet-bidang-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;}
+.mepet-count{font-size:11.5px;font-weight:800;color:var(--mint);}
+.mepet-count.full{color:var(--coral);}
+.mepet-empty{font-size:12px;color:var(--ink-soft);}
+.mepet-use{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-top:1px solid var(--line);}
+.mepet-use-title{font-size:12.5px;font-weight:700;word-break:break-word;}
+.mepet-use-meta{font-size:11px;color:var(--ink-soft);}
+.mepet-settings{border-top:1px solid var(--line);padding-top:14px;}
+
+/* ---------- popup banner pas buka web ---------- */
+.popup-banner{max-width:400px;}
+.popup-item{border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.popup-item.announce{background:var(--violet-soft);color:var(--violet);}
+.popup-item.lock{background:var(--amber-soft);color:#8a6205;}
+.popup-item-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.popup-item-text{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink);white-space:pre-wrap;}

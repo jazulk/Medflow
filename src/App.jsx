@@ -13,8 +13,10 @@ import RevisionNoteDialog from "./components/RevisionNoteDialog";
 import RequestLockDialog from "./components/RequestLockDialog";
 import DailyQuotaDialog from "./components/DailyQuotaDialog";
 import AnnouncementDialog from "./components/AnnouncementDialog";
+import MepetQuotaDialog from "./components/MepetQuotaDialog";
+import BannerPopup from "./components/BannerPopup";
 import { useDebounce } from "./hooks/useDebounce";
-import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort } from "./constants";
+import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort, countMepetFor } from "./constants";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -45,7 +47,9 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
-  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "", announcement_enabled: false, announcement_message: "" });
+  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "", announcement_enabled: false, announcement_message: "", mepet_quota: 3, mepet_count_since: null });
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [mepetDialogOpen, setMepetDialogOpen] = useState(false);
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const [quotaRules, setQuotaRules] = useState([]);
   const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
@@ -130,11 +134,12 @@ export default function App() {
     if (!profile) return;
     supabase
       .from("app_settings")
-      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message, announcement_enabled, announcement_message")
+      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message, announcement_enabled, announcement_message, mepet_quota, mepet_count_since")
       .eq("id", true)
       .single()
       .then(({ data, error }) => {
         if (!error && data) setAppSettings(data);
+        setSettingsLoaded(true);
       });
 
     const channel = supabase
@@ -177,6 +182,22 @@ export default function App() {
     setAppSettings(data);
     setAnnounceDialogOpen(false);
     showToast(next.announcement_enabled ? "Pengumuman ditampilkan" : "Pengumuman disembunyikan");
+  }
+
+  async function saveMepetSettings(next) {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .update({ ...next, updated_by: profile.id, updated_at: new Date().toISOString() })
+      .eq("id", true)
+      .select()
+      .single();
+    if (error) {
+      showToast("Gagal update jatah mepet: " + error.message, "error");
+      return;
+    }
+    setAppSettings(data);
+    setMepetDialogOpen(false);
+    showToast("Jatah keringanan mepet disimpan");
   }
 
   // ---------- Kuota harian per prefix+platform: fetch awal + realtime ----------
@@ -261,6 +282,7 @@ export default function App() {
           platform: form.platform,
           status: form.status,
           content_ready: form.content_ready,
+          is_mepet: !!form.is_mepet,
           post_date: form.post_date || null,
           post_time: form.post_time || null,
           pic: form.pic,
@@ -404,6 +426,7 @@ export default function App() {
       "Link Sumber": p.source_link || "-",
       "Alasan Admin": p.rejection_note || "-",
       "Alasan Dikembalikan": p.revision_note || "-",
+      "Pakai Jatah Mepet": p.is_mepet ? "Ya" : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
@@ -429,8 +452,27 @@ export default function App() {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
 
+  // Jatah keringanan mepet bidang yang lagi login (dihitung dari data posts yang udah ke-load)
+  const mepetQuota = appSettings.mepet_quota ?? 3;
+  const mepetUsed = countMepetFor(posts, profile.bidang_name, appSettings.mepet_count_since);
+  const mepetInfo = { quota: mepetQuota, used: mepetUsed };
+
+  // Isi popup pas web dibuka = semua banner yang lagi aktif
+  const lockText = appSettings.feed_lock_enabled
+    ? appSettings.feed_lock_message ||
+      `Format ${(appSettings.feed_lock_prefixes || []).join(", ")} nggak bisa buat posting tanggal ${formatDateShort(appSettings.feed_lock_start_date)} - ${formatDateShort(appSettings.feed_lock_end_date)}.`
+    : "";
+  const popupItems = [
+    ...(appSettings.announcement_enabled && appSettings.announcement_message
+      ? [{ key: "announce", icon: "📢", title: "Pengumuman", text: appSettings.announcement_message }]
+      : []),
+    ...(lockText ? [{ key: "lock", icon: "🔒", title: "Batas Tanggal Posting", text: lockText }] : []),
+  ];
+
   return (
     <>
+      {settingsLoaded && <BannerPopup items={popupItems} />}
+
       {appSettings.announcement_enabled && appSettings.announcement_message && (
         <div className="announce-banner">
           <span>📢 {appSettings.announcement_message}</span>
@@ -471,6 +513,24 @@ export default function App() {
                   title="Atur kuota harian per format & platform"
                 >
                   📊 Kuota Harian{quotaRules.length ? ` (${quotaRules.length})` : ""}
+                </button>
+              )}
+              {!isAdmin && !isViewer && (
+                <button
+                  className={mepetUsed >= mepetQuota ? "mepet-chip empty" : "mepet-chip"}
+                  onClick={() => setMepetDialogOpen(true)}
+                  title="Jatah keringanan request mepet bidang lu"
+                >
+                  ⏱ Jatah mepet: {Math.max(mepetQuota - mepetUsed, 0)}/{mepetQuota} sisa
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  className="logout-btn"
+                  onClick={() => setMepetDialogOpen(true)}
+                  title="Atur & pantau jatah keringanan request mepet per bidang"
+                >
+                  ⏱ Jatah Mepet
                 </button>
               )}
               {isAdmin && (
@@ -607,6 +667,7 @@ export default function App() {
           editingPost={editingPost}
           bidangAccounts={bidangAccounts}
           feedLock={appSettings}
+          mepetInfo={mepetInfo}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
         />
@@ -656,6 +717,17 @@ export default function App() {
           onCancel={() => setAnnounceDialogOpen(false)}
         />
       )}
+
+      <MepetQuotaDialog
+        open={mepetDialogOpen}
+        isAdmin={isAdmin}
+        profile={profile}
+        posts={posts}
+        bidangAccounts={bidangAccounts}
+        settings={appSettings}
+        onSave={saveMepetSettings}
+        onCancel={() => setMepetDialogOpen(false)}
+      />
 
       <Toast toast={toast} />
     </>
