@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { formatDateShort, getMepetPosts, todayWIB, mepetQuotaFor } from "../constants";
+import { formatDateShort, getMepetPosts, todayWIB, mepetQuotaFor, departemenOf, DEPARTEMEN } from "../constants";
 
-// Dialog jatah keringanan mepet.
-// - Admin: atur limit + tanggal mulai hitung, liat rekap semua bidang (siapa pakai buat postingan apa).
-// - Bidang/viewer: read-only, cuma liat rekap bidang sendiri.
-export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidangAccounts, settings, onSave, onCancel }) {
+// Dialog jatah keringanan mepet -- dihitung PER DEPARTEMEN, dipakai bareng semua bidang di dalamnya.
+// - Admin: atur jatah default + jatah khusus per departemen + tanggal mulai hitung, liat rekap semua departemen.
+// - Bidang/viewer: read-only, liat rekap departemen sendiri (termasuk yang dipakai bidang lain di departemen yang sama).
+export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settings, onSave, onCancel }) {
   const [quota, setQuota] = useState(3);
   const [since, setSince] = useState("");
-  const [overrides, setOverrides] = useState({}); // { [bidang]: string } -- kosong = pakai default
+  const [overrides, setOverrides] = useState({}); // { [departemen]: string } -- kosong = pakai default
 
   useEffect(() => {
     if (open) {
@@ -22,10 +22,10 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
   const limit = settings.mepet_quota ?? 3;
   const used = getMepetPosts(posts, settings.mepet_count_since);
 
-  // Daftar bidang: admin liat semua akun bidang + yang udah pernah pakai; bidang cuma dirinya sendiri.
-  const names = isAdmin
-    ? Array.from(new Set([...(bidangAccounts || []), ...used.map((p) => p.requested_by_name).filter(Boolean)])).sort()
-    : [profile.bidang_name];
+  // Admin: semua departemen (+ departemen lain yang kebetulan udah kepake). Bidang: departemennya sendiri.
+  const depts = isAdmin
+    ? Array.from(new Set([...Object.keys(DEPARTEMEN), ...used.map((p) => departemenOf(p.requested_by_name)).filter(Boolean)]))
+    : [departemenOf(profile.bidang_name)];
 
   function handleSave() {
     const n = Math.max(0, Math.min(20, Number(quota) || 0));
@@ -41,21 +41,24 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
       <div className="modal" role="dialog" aria-modal="true" aria-label="Jatah keringanan mepet" onClick={(e) => e.stopPropagation()}>
         <h2>⏱ Jatah Keringanan Mepet</h2>
         <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
-          Tiap departemen (dipakai bareng semua bidang di dalamnya) boleh request mepet (kurang dari H-5) sebanyak <b>{limit}x</b> (admin bisa ngatur beda per departemen)
-          {settings.mepet_count_since ? <> sejak {formatDateShort(settings.mepet_count_since)}</> : null}. Pakai jatahnya harus konfirmasi ke admin dulu (admin yang nginputin). Postingan yang dihapus atau jadi Pending nggak ngitung.
+          Tiap departemen boleh request mepet (kurang dari H-5) sebanyak <b>{limit}x</b>, dipakai bareng semua bidang di dalamnya
+          {settings.mepet_count_since ? <> (dihitung sejak {formatDateShort(settings.mepet_count_since)})</> : null}. Pakai jatahnya harus konfirmasi ke admin dulu, admin yang nginputin. Postingan yang dihapus atau jadi Pending nggak ngitung.
         </p>
 
         <div className="mepet-list">
-          {names.map((name) => {
-            const mine = used.filter((p) => p.requested_by_name === name);
-            const bLimit = isAdmin ? Number(overrides[name] !== undefined && overrides[name] !== "" ? overrides[name] : limit) : mepetQuotaFor(settings, name);
-            const full = mine.length >= bLimit;
+          {depts.map((dept) => {
+            const mine = used.filter((p) => departemenOf(p.requested_by_name) === dept);
+            const dLimit = isAdmin
+              ? Number(overrides[dept] !== undefined && overrides[dept] !== "" ? overrides[dept] : limit)
+              : mepetQuotaFor(settings, dept);
+            const full = mine.length >= dLimit;
+            const members = DEPARTEMEN[dept] || [];
             return (
-              <div className="mepet-bidang" key={name}>
+              <div className="mepet-bidang" key={dept}>
                 <div className="mepet-bidang-head">
-                  <b>{name}</b>
+                  <b>{dept}</b>
                   <span className={full ? "mepet-count full" : "mepet-count"}>
-                    {mine.length}/{bLimit} kepake
+                    {mine.length}/{dLimit} kepake
                     {isAdmin && (
                       <input
                         type="number"
@@ -63,19 +66,20 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
                         max="20"
                         className="mepet-override"
                         placeholder={String(limit)}
-                        value={overrides[name] ?? ""}
-                        onChange={(e) => setOverrides((o) => ({ ...o, [name]: e.target.value }))}
+                        value={overrides[dept] ?? ""}
+                        onChange={(e) => setOverrides((o) => ({ ...o, [dept]: e.target.value }))}
                         title="Jatah khusus departemen ini (kosongin = pakai default)"
-                        aria-label={`Jatah khusus ${name}`}
+                        aria-label={`Jatah khusus ${dept}`}
                       />
                     )}
                   </span>
                 </div>
+                {members.length > 0 && <div className="mepet-members">Bidang: {members.join(", ")}</div>}
                 {mine.length > 0 && (
                   <div className="mepet-by-bidang">
                     {Object.entries(
                       mine.reduce((acc, p) => {
-                        const k = p.mepet_bidang || "belum dicatat";
+                        const k = p.requested_by_name || "-";
                         acc[k] = (acc[k] || 0) + 1;
                         return acc;
                       }, {})
@@ -90,7 +94,7 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
                   mine.map((p) => (
                     <div className="mepet-use" key={p.id}>
                       <span className="mepet-use-title">{p.title}</span>
-                      <span className="mepet-use-by">dipakai bidang: <b>{p.mepet_bidang || "belum dicatat"}</b></span>
+                      <span className="mepet-use-by">dipakai bidang: <b>{p.requested_by_name || "-"}</b></span>
                       <span className="mepet-use-meta">
                         diajukan {formatDateShort(p.submit_date)} · posting {formatDateShort(p.post_date)} · {p.status}
                       </span>

@@ -1,4 +1,4 @@
-import { STATUSES, PLATFORM_COLORS, formatDateShort, isOverdue, sortByPostDate, isArchived, ownerCanDelete, getDepartmentColor } from "../constants";
+import { STATUSES, PLATFORM_COLORS, formatDateShort, isOverdue, sortByPostDate, isArchived, ownerCanDelete, getDepartmentColor, departemenOf } from "../constants";
 
 export default function Board({ posts, profile, onCardClick, onDelete, onDropStatus, onArchive }) {
   const isAdmin = profile.role === "admin";
@@ -94,7 +94,7 @@ export default function Board({ posts, profile, onCardClick, onDelete, onDropSta
                           <span className="requester-badge" style={{ background: getDepartmentColor(p.requested_by_name).s, color: getDepartmentColor(p.requested_by_name).c }}>dari {p.requested_by_name}</span>
                         )}
                         {p.is_mepet && (
-                          <span className="requester-badge" style={{ background: "var(--amber-soft)", color: "var(--amber)" }} title={`Request ini pakai jatah keringanan mepet${p.mepet_bidang ? " (bidang " + p.mepet_bidang + ")" : ""}`}>⏱ Mepet{p.mepet_bidang ? ` · ${p.mepet_bidang}` : ""}</span>
+                          <span className="requester-badge" style={{ background: "var(--amber-soft)", color: "var(--amber)" }} title={`Request ini pakai jatah keringanan mepet departemen ${departemenOf(p.requested_by_name)}`}>⏱ Mepet</span>
                         )}
                         {p.content_ready && (
                           <span className="requester-badge" style={{ background: "var(--mint-soft)", color: "var(--mint)" }}>⚡ Siap Upload</span>

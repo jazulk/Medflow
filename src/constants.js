@@ -239,12 +239,41 @@ export function getMepetPosts(posts, since) {
   );
 }
 
-export function countMepetFor(posts, bidangName, since) {
-  return getMepetPosts(posts, since).filter((p) => p.requested_by_name === bidangName).length;
+// Struktur organisasi: departemen -> bidang (nama = bidang_name di akun Medflow).
+// Jatah mepet dihitung PER DEPARTEMEN dan dipakai bareng semua bidang di dalamnya.
+export const DEPARTEMEN = {
+  PSDM: ["Senor", "Litbang", "KWU", "Kader"],
+  HDK: ["Lugri", "Dagri"],
+  SOSPOL: ["Advokasi", "Pengmas"],
+};
+export const BIRO_MEDFO = ["Pubinfo", "Mulmed"]; // admin, nggak kena jatah
+
+const BIDANG_ALIAS = { advo: "Advokasi" };
+
+function normName(s) {
+  return String(s || "").trim().toLowerCase();
 }
 
-// Jatah efektif satu bidang: override per bidang kalau ada, kalau nggak pakai default.
-export function mepetQuotaFor(settings, bidangName) {
-  const o = settings?.mepet_quota_overrides?.[bidangName];
+// Nama bidang (atau nama departemen) -> nama departemen. Kalau nggak dikenal, balikin nama itu sendiri.
+export function departemenOf(name) {
+  const n = normName(name);
+  if (!n) return "";
+  for (const dept of Object.keys(DEPARTEMEN)) {
+    if (normName(dept) === n) return dept;
+    const members = DEPARTEMEN[dept].map(normName);
+    if (members.includes(n) || members.includes(normName(BIDANG_ALIAS[n]))) return dept;
+  }
+  return String(name).trim();
+}
+
+// Jumlah jatah mepet yang kepake satu departemen (nerima nama bidang ATAU departemen).
+export function countMepetFor(posts, name, since) {
+  const dept = departemenOf(name);
+  return getMepetPosts(posts, since).filter((p) => departemenOf(p.requested_by_name) === dept).length;
+}
+
+// Jatah efektif satu departemen: override admin kalau ada, kalau nggak pakai default.
+export function mepetQuotaFor(settings, name) {
+  const o = settings?.mepet_quota_overrides?.[departemenOf(name)];
   return o === undefined || o === null || o === "" ? (settings?.mepet_quota ?? 3) : Number(o);
 }

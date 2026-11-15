@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit, isRevisionReturn, todayWIB, addDaysWIB } from "../constants";
+import { departemenOf, STATUSES, PLATFORM_COLORS, PREFIX_OPTIONS, PJ_OPTIONS, splitPrefixFromTitle, joinPrefixAndTopic, ownerCanEdit, isRevisionReturn, todayWIB, addDaysWIB } from "../constants";
 
 const emptyForm = {
   prefix: "[FEEDS]",
@@ -9,7 +9,6 @@ const emptyForm = {
   bidang_pengaju: "",
   content_ready: false,
   is_mepet: false,
-  mepet_bidang: "",
   post_date: "",
   post_time: "",
   pic: "",
@@ -21,7 +20,7 @@ const emptyForm = {
   revision_note: "",
 };
 
-export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, mepetInfo, mepetBidangOptions, mepetUsageByDept, onClose, onSave }) {
+export default function PostModal({ profile, editingPost, bidangAccounts, feedLock, mepetInfo, mepetUsageByDept, onClose, onSave }) {
   const isAdmin = profile.role === "admin";
   const isViewer = profile.role === "viewer";
   // Modal ini sekarang cuma kebuka lewat tombol "+ Tambah" atau tombol "Edit" di drawer,
@@ -54,7 +53,6 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         bidang_pengaju: editingPost.requested_by_name || "",
         content_ready: !!editingPost.content_ready,
         is_mepet: !!editingPost.is_mepet,
-        mepet_bidang: editingPost.mepet_bidang || "",
         post_date: editingPost.post_date || "",
         post_time: editingPost.post_time || "",
         pic: editingPost.pic || "",
@@ -125,7 +123,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         setFormError("Tanggal posting udah lewat, pilih tanggal hari ini atau setelahnya.");
         return;
       } else if (form.post_date < addDaysWIB(5)) {
-        setFormError(`Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau emang mepet, konfirmasi dulu ke admin Medfo biar request-nya diinputin admin pakai jatah mepet departemen lu (sisa ${mepetRemaining} dari ${mepetInfo?.quota ?? 0}). Kalau kontennya udah jadi, centang "Konten udah jadi" biar cukup 3 jam sebelum posting.`);
+        setFormError(`Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau emang mepet, konfirmasi dulu ke admin Medfo biar request-nya diinputin admin pakai jatah mepet departemen lu (${departemenOf(profile.bidang_name)}) (sisa ${mepetRemaining} dari ${mepetInfo?.quota ?? 0}). Kalau kontennya udah jadi, centang "Konten udah jadi" biar cukup 3 jam sebelum posting.`);
         return;
       }
     }
@@ -149,7 +147,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
       platform: form.platform,
       status: form.status,
       content_ready: form.content_ready,
-      ...(isAdmin ? { is_mepet: form.is_mepet, mepet_bidang: form.is_mepet ? form.mepet_bidang.trim() || null : null } : {}),
+      ...(isAdmin ? { is_mepet: form.is_mepet } : {}),
       post_date: form.post_date,
       post_time: form.post_time,
       pic: form.pic,
@@ -258,12 +256,6 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
             </div>
           )}
 
-          <datalist id="mepet-bidang-list">
-            {(mepetBidangOptions || []).map((n) => (
-              <option key={n} value={n} />
-            ))}
-          </datalist>
-
           {isAdmin && (
             <div className="field">
               <label className="mepet-toggle-row" style={{ color: "var(--ink-soft)" }}>
@@ -273,29 +265,19 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
                   checked={form.is_mepet}
                   onChange={(e) => set("is_mepet", e.target.checked)}
                 />
-                <span>⏱ Tandai pakai jatah mepet departemen pengaju (catat manual)</span>
+                <span>⏱ Tandai pakai jatah mepet (jatah departemen dari bidang pengaju)</span>
               </label>
               {(() => {
-                const dept = (form.bidang_pengaju || editingPost?.requested_by_name || "").trim();
+                const bidang = (form.bidang_pengaju || editingPost?.requested_by_name || "").trim();
+                const dept = bidang ? departemenOf(bidang) : "";
                 const u = dept ? mepetUsageByDept?.[dept] : null;
                 if (!u) return null;
                 return (
                   <p className={u.used >= u.quota ? "mepet-hint empty" : "mepet-hint"} style={{ marginTop: 4 }}>
-                    Jatah mepet {dept}: {u.used} dari {u.quota} kepake{u.used >= u.quota ? " (udah habis, admin tetap bisa nandain)" : ""}.
+                    Jatah mepet departemen {dept} (bidang {bidang}): {u.used} dari {u.quota} kepake{u.used >= u.quota ? " (udah habis, admin tetap bisa nandain)" : ""}.
                   </p>
                 );
               })()}
-              {form.is_mepet && (
-                <input
-                  type="text"
-                  list="mepet-bidang-list"
-                  className="mepet-bidang-input"
-                  value={form.mepet_bidang}
-                  onChange={(e) => set("mepet_bidang", e.target.value)}
-                  placeholder="Bidang yang makai jatah (misal: Humas)"
-                  maxLength={60}
-                />
-              )}
             </div>
           )}
 
