@@ -16,7 +16,7 @@ import AnnouncementDialog from "./components/AnnouncementDialog";
 import MepetQuotaDialog from "./components/MepetQuotaDialog";
 import BannerPopup from "./components/BannerPopup";
 import { useDebounce } from "./hooks/useDebounce";
-import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort, countMepetFor } from "./constants";
+import { PLATFORM_COLORS, STAT_GRADIENTS, STATUSES, isArchived, isRevisionReturn, formatDateShort, countMepetFor, mepetQuotaFor } from "./constants";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -47,7 +47,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { id, title }
   const [revisionPrompt, setRevisionPrompt] = useState(null); // { id, toStatus }
-  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "", announcement_enabled: false, announcement_message: "", mepet_quota: 3, mepet_count_since: null });
+  const [appSettings, setAppSettings] = useState({ feed_lock_enabled: false, feed_lock_start_date: null, feed_lock_end_date: null, feed_lock_prefixes: [], feed_lock_message: "", announcement_enabled: false, announcement_message: "", mepet_quota: 3, mepet_count_since: null, mepet_quota_overrides: {} });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [mepetDialogOpen, setMepetDialogOpen] = useState(false);
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
@@ -134,7 +134,7 @@ export default function App() {
     if (!profile) return;
     supabase
       .from("app_settings")
-      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message, announcement_enabled, announcement_message, mepet_quota, mepet_count_since")
+      .select("feed_lock_enabled, feed_lock_start_date, feed_lock_end_date, feed_lock_prefixes, feed_lock_message, announcement_enabled, announcement_message, mepet_quota, mepet_count_since, mepet_quota_overrides")
       .eq("id", true)
       .single()
       .then(({ data, error }) => {
@@ -453,7 +453,7 @@ export default function App() {
   const isViewer = profile.role === "viewer";
 
   // Jatah keringanan mepet bidang yang lagi login (dihitung dari data posts yang udah ke-load)
-  const mepetQuota = appSettings.mepet_quota ?? 3;
+  const mepetQuota = mepetQuotaFor(appSettings, profile.bidang_name);
   const mepetUsed = countMepetFor(posts, profile.bidang_name, appSettings.mepet_count_since);
   const mepetInfo = { quota: mepetQuota, used: mepetUsed };
 
@@ -519,7 +519,7 @@ export default function App() {
                 <button
                   className={mepetUsed >= mepetQuota ? "mepet-chip empty" : "mepet-chip"}
                   onClick={() => setMepetDialogOpen(true)}
-                  title="Jatah keringanan request mepet bidang lu"
+                  title="Jatah keringanan request mepet departemen lu (dipakai bareng semua bidang di dalamnya)"
                 >
                   ⏱ Jatah mepet: {Math.max(mepetQuota - mepetUsed, 0)}/{mepetQuota} sisa
                 </button>
@@ -528,7 +528,7 @@ export default function App() {
                 <button
                   className="logout-btn"
                   onClick={() => setMepetDialogOpen(true)}
-                  title="Atur & pantau jatah keringanan request mepet per bidang"
+                  title="Atur & pantau jatah keringanan request mepet per departemen"
                 >
                   ⏱ Jatah Mepet
                 </button>

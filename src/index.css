@@ -312,3 +312,4 @@ h1.pagetitle{font-size:28px;margin:0;font-weight:800;}
 .popup-item.lock{background:var(--amber-soft);color:#8a6205;}
 .popup-item-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
 .popup-item-text{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink);white-space:pre-wrap;}
+.mepet-override{width:48px;margin-left:8px;border:1.5px solid var(--line);border-radius:8px;padding:3px 4px;font-size:12px;text-align:center;font-weight:700;}

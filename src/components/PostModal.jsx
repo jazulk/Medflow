@@ -124,11 +124,11 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
         return;
       } else if (form.post_date < addDaysWIB(5)) {
         if (!form.is_mepet) {
-          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau emang mepet, nyalain \"Pakai keringanan mepet\" di bawah (jatah terbatas per bidang). Kalau kontennya udah jadi, centang \"Konten udah jadi\" biar cukup 3 jam sebelum posting.");
+          setFormError("Request cuma bisa diajukan minimal H-5 dari tanggal posting. Kalau emang mepet, nyalain \"Pakai keringanan mepet\" di bawah (jatah terbatas per departemen). Kalau kontennya udah jadi, centang \"Konten udah jadi\" biar cukup 3 jam sebelum posting.");
           return;
         }
         if (mepetRemaining <= 0) {
-          setFormError("Jatah keringanan mepet bidang lu udah habis, jadi request ini harus minimal H-5 (atau centang \"Konten udah jadi\" kalau kontennya udah ada).");
+          setFormError("Jatah keringanan mepet departemen lu udah habis, jadi request ini harus minimal H-5 (atau centang \"Konten udah jadi\" kalau kontennya udah ada).");
           return;
         }
       }
@@ -154,6 +154,7 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
       status: form.status,
       content_ready: form.content_ready,
       ...(isNewBidangRequest ? { is_mepet: needsMepet && form.is_mepet } : {}),
+      ...(isAdmin ? { is_mepet: form.is_mepet } : {}),
       post_date: form.post_date,
       post_time: form.post_time,
       pic: form.pic,
@@ -262,6 +263,20 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
             </div>
           )}
 
+          {isAdmin && (
+            <div className="field">
+              <label className="mepet-toggle-row" style={{ color: "var(--ink-soft)" }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={form.is_mepet}
+                  onChange={(e) => set("is_mepet", e.target.checked)}
+                />
+                <span>⏱ Tandai pakai jatah mepet departemen pengaju (catat manual)</span>
+              </label>
+            </div>
+          )}
+
           {needsMepet && (
             <div className="field mepet-box">
               <label className="mepet-toggle-row">
@@ -276,8 +291,8 @@ export default function PostModal({ profile, editingPost, bidangAccounts, feedLo
               </label>
               <p className={mepetRemaining > 0 ? "mepet-hint" : "mepet-hint empty"}>
                 {mepetRemaining > 0
-                  ? `Tanggal ini kurang dari H-5. Sisa jatah bidang lu: ${mepetRemaining} dari ${mepetInfo.quota}. Nyalain toggle ini buat tetap bisa request (jatah kepake 1).`
-                  : "Jatah keringanan mepet bidang lu udah habis. Pilih tanggal minimal H-5, atau centang \"Konten udah jadi\" kalau kontennya udah ada."}
+                  ? `Tanggal ini kurang dari H-5. Sisa jatah departemen lu: ${mepetRemaining} dari ${mepetInfo.quota}. Nyalain toggle ini buat tetap bisa request (jatah kepake 1).`
+                  : "Jatah keringanan mepet departemen lu udah habis. Pilih tanggal minimal H-5, atau centang \"Konten udah jadi\" kalau kontennya udah ada."}
               </p>
             </div>
           )}

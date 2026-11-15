@@ -242,3 +242,9 @@ export function getMepetPosts(posts, since) {
 export function countMepetFor(posts, bidangName, since) {
   return getMepetPosts(posts, since).filter((p) => p.requested_by_name === bidangName).length;
 }
+
+// Jatah efektif satu bidang: override per bidang kalau ada, kalau nggak pakai default.
+export function mepetQuotaFor(settings, bidangName) {
+  const o = settings?.mepet_quota_overrides?.[bidangName];
+  return o === undefined || o === null || o === "" ? (settings?.mepet_quota ?? 3) : Number(o);
+}
