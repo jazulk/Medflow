@@ -4,7 +4,7 @@ import { formatDateShort, getMepetPosts, todayWIB, mepetQuotaFor, departemenOf, 
 // Dialog jatah keringanan mepet -- dihitung PER DEPARTEMEN, dipakai bareng semua bidang di dalamnya.
 // - Admin: atur jatah default + jatah khusus per departemen + tanggal mulai hitung, liat rekap semua departemen.
 // - Bidang/viewer: read-only, liat rekap departemen sendiri (termasuk yang dipakai bidang lain di departemen yang sama).
-export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settings, onSave, onCancel }) {
+export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settings, onSave, onCancel, onOpenPost }) {
   const [quota, setQuota] = useState(3);
   const [since, setSince] = useState("");
   const [overrides, setOverrides] = useState({}); // { [departemen]: string } -- kosong = pakai default
@@ -101,12 +101,19 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settin
                               <div className="mepet-empty">Belum ada request yang pakai jatah.</div>
                             ) : (
                               posts_b.map((p) => (
-                                <div className="mepet-use" key={p.id}>
+                                <button
+                                  type="button"
+                                  className="mepet-use mepet-use-btn"
+                                  key={p.id}
+                                  onClick={() => onOpenPost && onOpenPost(p)}
+                                  title="Buka detail request"
+                                >
                                   <span className="mepet-use-title">{p.title}</span>
                                   <span className="mepet-use-meta">
                                     diajukan {formatDateShort(p.submit_date)} · posting {formatDateShort(p.post_date)} · {p.status}
                                   </span>
-                                </div>
+                                  <span className="mepet-use-open">Lihat detail ›</span>
+                                </button>
                               ))
                             )}
                           </div>

@@ -737,6 +737,15 @@ export default function App() {
         settings={appSettings}
         onSave={saveMepetSettings}
         onCancel={() => setMepetDialogOpen(false)}
+        onOpenPost={(p) => {
+          // bidang cuma boleh buka detail postingannya sendiri (sama kayak klik kartu di papan)
+          if (isAdmin || isViewer || p.requested_by === profile.id) {
+            setMepetDialogOpen(false);
+            setSelectedPostForDrawer(p);
+          } else {
+            showToast("Detail request ini cuma bisa dibuka sama bidang yang ngajuin dan admin.", "error");
+          }
+        }}
       />
 
       <Toast toast={toast} />
