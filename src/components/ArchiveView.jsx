@@ -5,13 +5,29 @@ export default function ArchiveView({ posts, profile, onCardClick, onDelete, onA
   const isAdmin = profile.role === "admin";
   const canOpen = isAdmin || profile.role === "viewer";
 
+  // Kelompokin per bulan pakai kunci YYYY-MM biar bisa diurutin bener (bulan terbaru di atas),
+  // nggak ngikutin urutan data masuk. "Tanpa tanggal" selalu di paling bawah.
   const grouped = {};
+  const labelOf = {};
   posts.forEach((p) => {
-    const d = p.post_date ? new Date(p.post_date + "T00:00:00") : null;
-    const key = d ? d.toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : "Tanpa tanggal";
-    (grouped[key] = grouped[key] || []).push(p);
+    const ym = p.post_date ? p.post_date.slice(0, 7) : "none";
+    if (!labelOf[ym]) {
+      labelOf[ym] =
+        ym === "none"
+          ? "Tanpa tanggal"
+          : new Date(p.post_date.slice(0, 7) + "-01T00:00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    }
+    (grouped[ym] = grouped[ym] || []).push(p);
   });
-  const groupKeys = Object.keys(grouped);
+  const groupKeys = Object.keys(grouped).sort((a, b) => {
+    if (a === "none") return 1;
+    if (b === "none") return -1;
+    return b.localeCompare(a); // terbaru dulu
+  });
+  // di dalam bulan: tanggal + jam tayang terbaru dulu
+  groupKeys.forEach((k) => {
+    grouped[k].sort((a, b) => `${b.post_date || ""} ${b.post_time || ""}`.localeCompare(`${a.post_date || ""} ${a.post_time || ""}`));
+  });
 
   const [collapsed, setCollapsed] = useState({});
   function toggleGroup(key) {
@@ -26,11 +42,12 @@ export default function ArchiveView({ posts, profile, onCardClick, onDelete, onA
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {groupKeys.map((month) => {
         const isOpen = !collapsed[month];
+        const monthLabel = labelOf[month];
         return (
           <div className="archive-group" key={month}>
             <button className="archive-group-header" onClick={() => toggleGroup(month)}>
               <span className="archive-group-title">
-                <b>{month}</b>
+                <b>{monthLabel}</b>
                 <span className="archive-group-count">{grouped[month].length}</span>
               </span>
               <span className="archive-chevron">{isOpen ? "▲" : "▼"}</span>
