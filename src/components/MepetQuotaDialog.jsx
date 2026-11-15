@@ -8,11 +8,13 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settin
   const [quota, setQuota] = useState(3);
   const [since, setSince] = useState("");
   const [overrides, setOverrides] = useState({}); // { [departemen]: string } -- kosong = pakai default
+  const [openKey, setOpenKey] = useState(null); // bidang yang lagi dibuka: "DEPT|Bidang"
 
   useEffect(() => {
     if (open) {
       setQuota(settings.mepet_quota ?? 3);
       setSince(settings.mepet_count_since || "");
+      setOpenKey(null);
       setOverrides(Object.fromEntries(Object.entries(settings.mepet_quota_overrides || {}).map(([k, v]) => [k, String(v)])));
     }
   }, [open, settings]);
@@ -56,9 +58,9 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settin
             return (
               <div className="mepet-bidang" key={dept}>
                 <div className="mepet-bidang-head">
-                  <b>{dept}</b>
+                  <b>Departemen {dept}</b>
                   <span className={full ? "mepet-count full" : "mepet-count"}>
-                    {mine.length}/{dLimit} kepake
+                    {mine.length}/{dLimit}
                     {isAdmin && (
                       <input
                         type="number"
@@ -74,33 +76,45 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, settin
                     )}
                   </span>
                 </div>
-                {members.length > 0 && <div className="mepet-members">Bidang: {members.join(", ")}</div>}
-                {mine.length > 0 && (
-                  <div className="mepet-by-bidang">
-                    {Object.entries(
-                      mine.reduce((acc, p) => {
-                        const k = p.requested_by_name || "-";
-                        acc[k] = (acc[k] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ).map(([k, n]) => (
-                      <span className="mepet-by-chip" key={k}>{k} · {n}x</span>
-                    ))}
-                  </div>
-                )}
-                {mine.length === 0 ? (
-                  <div className="mepet-empty">Belum ada yang kepake.</div>
-                ) : (
-                  mine.map((p) => (
-                    <div className="mepet-use" key={p.id}>
-                      <span className="mepet-use-title">{p.title}</span>
-                      <span className="mepet-use-by">dipakai bidang: <b>{p.requested_by_name || "-"}</b></span>
-                      <span className="mepet-use-meta">
-                        diajukan {formatDateShort(p.submit_date)} · posting {formatDateShort(p.post_date)} · {p.status}
-                      </span>
-                    </div>
-                  ))
-                )}
+                <div className="mepet-bidang-rows">
+                  {Array.from(new Set([...members, ...mine.map((p) => p.requested_by_name).filter(Boolean)])).map((b) => {
+                    const posts_b = mine.filter((p) => p.requested_by_name === b);
+                    const n = posts_b.length;
+                    const key = `${dept}|${b}`;
+                    const isOpen = openKey === key;
+                    return (
+                      <div className="mepet-bidang-item" key={b}>
+                        <button
+                          type="button"
+                          className="mepet-bidang-row"
+                          onClick={() => setOpenKey(isOpen ? null : key)}
+                          aria-expanded={isOpen}
+                        >
+                          <span className="mepet-bidang-name">{isOpen ? "▾" : "▸"} {String(b).toUpperCase()}</span>
+                          <span className={n > 0 ? "mepet-bidang-val used" : "mepet-bidang-val"}>
+                            {n}x
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div className="mepet-bidang-detail">
+                            {n === 0 ? (
+                              <div className="mepet-empty">Belum ada request yang pakai jatah.</div>
+                            ) : (
+                              posts_b.map((p) => (
+                                <div className="mepet-use" key={p.id}>
+                                  <span className="mepet-use-title">{p.title}</span>
+                                  <span className="mepet-use-meta">
+                                    diajukan {formatDateShort(p.submit_date)} · posting {formatDateShort(p.post_date)} · {p.status}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
