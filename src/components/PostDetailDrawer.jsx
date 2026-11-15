@@ -124,7 +124,7 @@ export default function PostDetailDrawer({ post, profile, onClose, onEdit, onDel
               <div className="detail-row"><span>Jenis</span><b style={{ color: "var(--mint)" }}>⚡ Konten sudah jadi (tinggal upload/repost)</b></div>
             )}
             {post.is_mepet && (
-              <div className="detail-row"><span>Keringanan</span><b style={{ color: "var(--amber)" }}>⏱ Pakai jatah request mepet</b></div>
+              <div className="detail-row"><span>Keringanan</span><b style={{ color: "var(--amber)" }}>⏱ Pakai jatah request mepet{post.mepet_bidang ? ` · bidang ${post.mepet_bidang}` : ""}</b></div>
             )}
             <div className="detail-row"><span>Diajukan Oleh</span><b>{post.requested_by_name || "-"}</b></div>
             <div className="detail-row"><span>Tanggal Diajukan</span><b>{formatDateFull(post.submit_date)}</b></div>

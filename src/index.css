@@ -313,3 +313,7 @@ h1.pagetitle{font-size:28px;margin:0;font-weight:800;}
 .popup-item-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
 .popup-item-text{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink);white-space:pre-wrap;}
 .mepet-override{width:48px;margin-left:8px;border:1.5px solid var(--line);border-radius:8px;padding:3px 4px;font-size:12px;text-align:center;font-weight:700;}
+.mepet-bidang-input{width:100%;margin-top:8px;border:1.5px solid #f0dca3;border-radius:9px;padding:7px 10px;font-size:13px;background:#fff;font-family:inherit;}
+.mepet-use-by{font-size:11.5px;color:var(--ink-soft);}
+.mepet-by-bidang{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.mepet-by-chip{background:var(--amber-soft);color:#8a6205;border-radius:7px;padding:2px 8px;font-size:11px;font-weight:800;}

@@ -71,12 +71,26 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
                     )}
                   </span>
                 </div>
+                {mine.length > 0 && (
+                  <div className="mepet-by-bidang">
+                    {Object.entries(
+                      mine.reduce((acc, p) => {
+                        const k = p.mepet_bidang || "belum dicatat";
+                        acc[k] = (acc[k] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([k, n]) => (
+                      <span className="mepet-by-chip" key={k}>{k} · {n}x</span>
+                    ))}
+                  </div>
+                )}
                 {mine.length === 0 ? (
                   <div className="mepet-empty">Belum ada yang kepake.</div>
                 ) : (
                   mine.map((p) => (
                     <div className="mepet-use" key={p.id}>
                       <span className="mepet-use-title">{p.title}</span>
+                      <span className="mepet-use-by">dipakai bidang: <b>{p.mepet_bidang || "belum dicatat"}</b></span>
                       <span className="mepet-use-meta">
                         diajukan {formatDateShort(p.submit_date)} · posting {formatDateShort(p.post_date)} · {p.status}
                       </span>

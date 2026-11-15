@@ -283,6 +283,7 @@ export default function App() {
           status: form.status,
           content_ready: form.content_ready,
           is_mepet: !!form.is_mepet,
+          mepet_bidang: form.is_mepet ? (form.mepet_bidang || null) : null,
           post_date: form.post_date || null,
           post_time: form.post_time || null,
           pic: form.pic,
@@ -426,7 +427,7 @@ export default function App() {
       "Link Sumber": p.source_link || "-",
       "Alasan Admin": p.rejection_note || "-",
       "Alasan Dikembalikan": p.revision_note || "-",
-      "Pakai Jatah Mepet": p.is_mepet ? "Ya" : "-",
+      "Pakai Jatah Mepet": p.is_mepet ? (p.mepet_bidang ? `Ya (${p.mepet_bidang})` : "Ya") : "-",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
@@ -668,6 +669,7 @@ export default function App() {
           bidangAccounts={bidangAccounts}
           feedLock={appSettings}
           mepetInfo={mepetInfo}
+          mepetBidangOptions={Array.from(new Set(posts.filter((p) => p.mepet_bidang && (isAdmin || p.requested_by_name === profile.bidang_name)).map((p) => p.mepet_bidang))).sort()}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
         />
