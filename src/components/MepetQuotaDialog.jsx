@@ -42,7 +42,7 @@ export default function MepetQuotaDialog({ open, isAdmin, profile, posts, bidang
         <h2>⏱ Jatah Keringanan Mepet</h2>
         <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: "-6px 0 16px", lineHeight: 1.5 }}>
           Tiap departemen (dipakai bareng semua bidang di dalamnya) boleh request mepet (kurang dari H-5) sebanyak <b>{limit}x</b> (admin bisa ngatur beda per departemen)
-          {settings.mepet_count_since ? <> sejak {formatDateShort(settings.mepet_count_since)}</> : null}. Postingan yang dihapus atau jadi Pending nggak ngitung.
+          {settings.mepet_count_since ? <> sejak {formatDateShort(settings.mepet_count_since)}</> : null}. Pakai jatahnya harus konfirmasi ke admin dulu (admin yang nginputin). Postingan yang dihapus atau jadi Pending nggak ngitung.
         </p>
 
         <div className="mepet-list">

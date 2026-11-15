@@ -457,6 +457,14 @@ export default function App() {
   const mepetQuota = mepetQuotaFor(appSettings, profile.bidang_name);
   const mepetUsed = countMepetFor(posts, profile.bidang_name, appSettings.mepet_count_since);
   const mepetInfo = { quota: mepetQuota, used: mepetUsed };
+  const mepetUsageByDept = isAdmin
+    ? Object.fromEntries(
+        Array.from(new Set([...(bidangAccounts || []), ...posts.filter((p) => p.is_mepet).map((p) => p.requested_by_name).filter(Boolean)])).map((n) => [
+          n,
+          { used: countMepetFor(posts, n, appSettings.mepet_count_since), quota: mepetQuotaFor(appSettings, n) },
+        ])
+      )
+    : {};
 
   // Isi popup pas web dibuka = semua banner yang lagi aktif
   const lockText = appSettings.feed_lock_enabled
@@ -669,6 +677,7 @@ export default function App() {
           bidangAccounts={bidangAccounts}
           feedLock={appSettings}
           mepetInfo={mepetInfo}
+          mepetUsageByDept={mepetUsageByDept}
           mepetBidangOptions={Array.from(new Set(posts.filter((p) => p.mepet_bidang && (isAdmin || p.requested_by_name === profile.bidang_name)).map((p) => p.mepet_bidang))).sort()}
           onClose={() => { setModalOpen(false); setEditingPost(null); }}
           onSave={handleSave}
